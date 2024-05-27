@@ -842,8 +842,6 @@ void cwm_algo_data_handle(void)
 
         algo_info.event_acc_gyro_aver_finish = 0;
         algo_info.en_acc_gyro_aver = 0;
-        CWM_Sensor_Disable(IDX_ACCEL);
-        CWM_Sensor_Disable(IDX_GYRO);
 
         //此处添加客户使用的外部接口
         test_read_aver_ag_rawdata();
