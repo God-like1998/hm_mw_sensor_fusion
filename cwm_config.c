@@ -590,7 +590,11 @@ static void cwm_ap_sensor_listen(pSensorEVT_t sensorEVT)
             if((2 == sensorEVT->fData[2]) && (1 == sensorEVT->fData[6])){
                 algo_info.angle_init_value.step1_status = ANGLE_INIT_SUCCESS;
                 CWM_OS_dbgPrintf("[cwm_listen] angle init step 1 success ");
+                algo_info.angle_init_value.pitch = sensorEVT->fData[4];
+                algo_info.angle_init_value.roll = sensorEVT->fData[5];
+                CWM_OS_dbgPrintf("[cwm_listen] update angle_init pitch&roll success ");
 
+                algo_info.angle_init_value.valid = 1;
                 update_angle_init_value_checksum();
                 algo_info.event_angle_init_finish = 1;
             }           
@@ -605,9 +609,7 @@ static void cwm_ap_sensor_listen(pSensorEVT_t sensorEVT)
                 algo_info.angle_init_value.step3_status = ANGLE_INIT_SUCCESS;
                 CWM_OS_dbgPrintf("[cwm_listen] angle init step 3 success ");
                 algo_info.angle_init_value.yaw = sensorEVT->fData[3];
-                algo_info.angle_init_value.pitch = sensorEVT->fData[4];
-                algo_info.angle_init_value.roll = sensorEVT->fData[5];
-                CWM_OS_dbgPrintf("[cwm_listen] update angle_init_value success ");
+                CWM_OS_dbgPrintf("[cwm_listen] update angle_init yaw success ");
 
 
                 algo_info.angle_init_value.valid = 1;
