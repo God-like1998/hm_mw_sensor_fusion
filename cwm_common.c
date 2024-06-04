@@ -1,17 +1,11 @@
-﻿
-
-
 #include "stdint.h"
 #include "string.h"
 #include "stdbool.h"
 #include "FreeRTOS.h"
 #include "task.h"
-
-
 #include  "cwm_common.h"
 #include  "cwm_config.h"
-
-
+#include "cwm_diskio.h"
 /**************************************************algo queue**************************************************/
 #define QUEUE_MAX_BUF_SIZE (256)/*必须是 2 的整数倍*/
 #define cwm_taskENTER_CRITICAL()  {if(pdFALSE == xPortIsInsideInterrupt()) {taskENTER_CRITICAL();}}
@@ -22,12 +16,9 @@ struct queue_t{
     int32_t size;
     uint8_t buf[QUEUE_MAX_BUF_SIZE];
 };
-
 static struct queue_t queue;
 
-
-////////////////////////////////////////////////////////////////本地调用接口////////////////////////////////////////////////////////
-
+/**************************************************本地接口**************************************************/
 static void queue_init(void)
 {
     memset(&queue,0,sizeof(queue));
@@ -41,7 +32,7 @@ static int32_t queue_add(uint8_t* data, uint16_t data_len)
         return -1;
 
     cwm_taskENTER_CRITICAL();
-    if(((queue.size + 2 + data_len) > QUEUE_MAX_BUF_SIZE) || (data_len > sizeof(algo_msg_t))){
+    if(((queue.size + 2 + data_len) > QUEUE_MAX_BUF_SIZE) || (data_len > sizeof(struct algo_msg_t))){
         cwm_taskEXIT_CRITICAL();
         CWM_OS_dbgPrintf("[algo_que]add error: queu full\n");
         return -1;
@@ -89,7 +80,7 @@ static int32_t queue_get(uint8_t* data)
         des_len--;
     }
 
-    if((data_len > (queue.size - 2)) || (data_len > sizeof(algo_msg_t))){
+    if((data_len > (queue.size - 2)) || (data_len > sizeof(struct algo_msg_t))){
         cwm_taskEXIT_CRITICAL();
         CWM_OS_dbgPrintf("[algo_que]get error: len too long\n");
         return -1;
@@ -108,56 +99,39 @@ static int32_t queue_get(uint8_t* data)
     return 0;
 }
 
-
-
-////////////////////////////////////////////////////////////////外部调用接口////////////////////////////////////////////////////////
-
+/**************************************************外部调用接口**************************************************/
 void algo_message_init(void)
 {
     queue_init();
 }
 
-int32_t send_single_to_algo_message(uint32_t id,uint32_t value)
+int32_t message_to_algo(uint32_t id,uint32_t value)
 {
-    algo_msg_t msg;
+    struct algo_msg_t msg;
+    uint32_t* v = (uint32_t*)&msg.data[0];
+
     msg.id = id;
-    *((uint32_t*)&msg.data[0]) = value;
+    *v = value;
+
+    CWM_OS_dbgPrintf("[algo]message_to_algo %u %u\n",id,value);
     return queue_add((uint8_t*)&msg,4+4);
 }
 
-int32_t send_multi_to_algo_message(uint32_t id,uint8_t* data,uint16_t len)
+int32_t data_to_algo(uint32_t id,uint8_t* data,uint16_t len)
 {
     if(len > MSG_DATA_MAX_SIZE)
         return -1;
 
-    algo_msg_t msg;
+    struct algo_msg_t msg;
     msg.id = id;
     memcpy(msg.data,data,len);
     return queue_add((uint8_t*)&msg,4+len);
 }
 
-int32_t receive_from_algo_message(uint8_t* data)
+int get_msg(uint8_t* data)
 {
-    
     return queue_get(data);
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

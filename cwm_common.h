@@ -1,4 +1,4 @@
-﻿#ifndef __CWM_COMMON_H__
+#ifndef __CWM_COMMON_H__
 #define __CWM_COMMON_H__
 
 #ifdef __cplusplus
@@ -11,53 +11,19 @@ extern "C"{
 
 #define MSG_DATA_MAX_SIZE (4+4*16)/*max size data: setting id + setting data*/
 
-
-
-
-typedef struct{
+struct algo_msg_t{
     uint32_t id;
     uint8_t data[MSG_DATA_MAX_SIZE];
-}algo_msg_t;
-
-
+};
 
 void algo_message_init(void);
-int32_t send_single_to_algo_message(uint32_t id,uint32_t value);
-int32_t send_multi_to_algo_message(uint32_t id,uint8_t* data,uint16_t len);
-int32_t receive_from_algo_message(uint8_t* data);
-
-
-
+int32_t message_to_algo(uint32_t id,uint32_t value);
+int32_t data_to_algo(uint32_t id,uint8_t* data,uint16_t len);
+int get_msg(uint8_t* data);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-
-
-
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
