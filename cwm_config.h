@@ -16,10 +16,8 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "SDK_HSET0.0.2.0"
+#define ALGO_CONFIG_VERSION "SDK_HSET0.0.3.0"
 #define ALGO_RES_MAX_COUNT  25
-#define ALGO_DEFAUL_ODR     50
-#define ALGO_TEST_EN        1
 
 
 #define ALGO_QUIET_TIME_SEC     (60*10)
@@ -41,11 +39,11 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 #define ALGO_STANDBY_QUIET_THRESHOLD ALGO_QUIET_LV7
 
 
-struct algo_res_t{
-    uint8_t size;
-    uint8_t write;
-    uint8_t read;
-    struct eul_qua_t data[ALGO_RES_MAX_COUNT];
+struct ag_avg_t{
+    uint16_t a_cnts;
+    uint16_t g_cnts;
+    struct ag_t ag_sum;
+    struct ag_t ag;
 };
 struct algo_ag_t{
     uint8_t size;
@@ -54,11 +52,43 @@ struct algo_ag_t{
     uint8_t data_type;
     struct ag_t data[ALGO_RES_MAX_COUNT];
 };
-struct ag_avg_t{
-    uint16_t a_cnts;
-    uint16_t g_cnts;
-    struct ag_t ag_sum;
-    struct ag_t ag;
+struct algo_res_t{
+    uint8_t size;
+    uint8_t write;
+    uint8_t read;
+    struct eul_qua_t data[ALGO_RES_MAX_COUNT];
+};
+struct ag_cali_back_t{
+    /*工厂校正数据*/
+    uint16_t crc_16;//校验和 
+    uint16_t spv_whole_status: 2;//spv 整机校正状态
+    uint16_t spv_pcba_status: 2;//spv pcba 校正状态
+    uint16_t sixface_status: 2;//六面校正状态
+    uint16_t valid:1;//数据可用
+    int32_t ax;
+    int32_t ay;
+    int32_t az;
+    int32_t gx;
+    int32_t gy;
+    int32_t gz;
+
+    /*算法持续校正数据*/
+    uint16_t auto_crc_16;//校验和 
+    uint16_t auto_valid:1;//数据可用
+    int32_t auto_gx;
+    int32_t auto_gy;
+    int32_t auto_gz;
+};
+struct original_eul_t{
+    uint16_t crc_16;
+    uint16_t step1_status:2;        //第一步校正状态
+    uint16_t step2_status:2;        //第二步校正状态
+    uint16_t step3_status:2;        //第三步校正状态
+    uint16_t running_steps:4;       //当前执行的校正步骤
+    uint16_t valid:1;//数据可用
+    float yaw;
+    float pitch;
+    float roll;
 };
 struct algo_info_t{
     uint16_t odr;//算法 odr
@@ -103,7 +133,6 @@ enum{
     E_ALGO_EVENT_CLOSE,
 };
 
-int CWM_OS_dbgPrintf(const char * format,...);
 void algo_init(void);
 uint16_t algo_get_odr(void);
 void algo_data_handle(void);
@@ -124,3 +153,7 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param);
 #endif
 
 #endif
+
+
+
+

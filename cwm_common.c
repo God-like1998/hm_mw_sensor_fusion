@@ -1,16 +1,11 @@
 #include "stdint.h"
 #include "string.h"
 #include "stdbool.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include  "cwm_common.h"
 #include  "cwm_config.h"
 #include "cwm_diskio.h"
 /**************************************************algo queue**************************************************/
 #define QUEUE_MAX_BUF_SIZE (256)/*必须是 2 的整数倍*/
-#define cwm_taskENTER_CRITICAL()  {if(pdFALSE == xPortIsInsideInterrupt()) {taskENTER_CRITICAL();}}
-#define cwm_taskEXIT_CRITICAL()   {if(pdFALSE == xPortIsInsideInterrupt()) {taskEXIT_CRITICAL();}}
-
 struct queue_t{
     int32_t head;
     int32_t size;

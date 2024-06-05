@@ -5,7 +5,7 @@
 extern "C"{
 #endif
 
-#include "cwm_config.h"
+#define ALGO_TEST_EN        1
 
 #if defined(ALGO_TEST_EN) && (1 == ALGO_TEST_EN)
 void algo_test(void);
@@ -16,3 +16,7 @@ void algo_test(void);
 #endif
 
 #endif
+
+
+
+

@@ -6,6 +6,7 @@
 #include "cwm_config.h"
 #include "cwm_port.h"
 #include "cwm_diskio.h"
+#include "cwm_test.h"
 
 #if defined(ALGO_TEST_EN) && (1 == ALGO_TEST_EN)
 extern struct algo_info_t algo_dev_info;

@@ -24,7 +24,6 @@
 enum{
      E_ALGO_MSG_LOG_DEBUG_CTL,
     E_ALGO_MSG_HS_ALGO_CTL,
-    // E_ALGO_MSG_SENSOR_CTL,
     E_ALGO_MSG_SPV_CALI_EN,
     E_ALGO_MSG_SPV_CALI_DIS,
     E_ALGO_MSG_ORI_EUL_CALI_EN,
@@ -57,13 +56,11 @@ void algo_message_handle(uint32_t id,uint8_t* data)
     switch (id){
         case E_ALGO_MSG_LOG_DEBUG_CTL:{
             uint32_t* ctr = (uint32_t*)data;
-            // algo_log_debug_ctl(*ctr);
             algo_state_handle(E_ALGO_FUNC_LOG_CTL,NULL,ctr);
         }            
         break;
         case E_ALGO_MSG_HS_ALGO_CTL:{
             uint32_t* ctr = (uint32_t*)data;
-            // algo_hs_algo_ctl(*ctr);
             if(*ctr){
                 algo_state_handle(E_STATE_HS_ORIT,E_ALGO_EVENT_OPEN,ctr);
             }else{
@@ -71,12 +68,8 @@ void algo_message_handle(uint32_t id,uint8_t* data)
             }
         }  
         break;
-        // case E_ALGO_MSG_SENSOR_CTL:{
-        // }
-        // break;
         case E_ALGO_MSG_SPV_CALI_EN:{
             uint32_t* mode = (uint32_t*)data;
-            // algo_spv_cali_en(*mode);
             switch(*mode){
                 case E_CALI_SPV_WHOLE:
                     algo_state_handle(E_STATE_SPV_WHOLE,E_ALGO_EVENT_OPEN,mode);
@@ -91,29 +84,23 @@ void algo_message_handle(uint32_t id,uint8_t* data)
         }
         break;
         case E_ALGO_MSG_SPV_CALI_DIS:{
-            // algo_spv_cali_dis();
-            /*spv 关闭接口通用，所以无论是 E_STATE_SPV_WHOLE、E_STATE_SPV_PCBA、E_STATE_SPV_SIX_FACE 都可以*/
             algo_state_handle(E_STATE_SPV_WHOLE,E_ALGO_EVENT_CLOSE,NULL);
         }
         break;
         case E_ALGO_MSG_ORI_EUL_CALI_EN:{
             uint32_t* steps = (uint32_t*)data;
-            // algo_original_eul_cali_en(*steps);
             algo_state_handle(E_STATE_ORIG_EUL_CALI,E_ALGO_EVENT_OPEN,steps);
         }
         break;
         case E_ALGO_MSG_ORI_EUL_CALI_DIS:{
-            // algo_original_eul_cali_dis();
             algo_state_handle(E_STATE_ORIG_EUL_CALI,E_ALGO_EVENT_CLOSE,NULL);
         }
         break;
         case E_ALGO_MSG_AVG_AG_VALUE_EN:{
-            // algo_avg_ag_value_en();
             algo_state_handle(E_ALGO_FUNC_AG_AVG_VALUE,NULL,NULL);
         }
         break;
         case E_ALGO_MSG_SAVE_BEFORE_POWEROFF:{
-            // algo_save_before_poweroff();
             algo_state_handle(E_ALGO_FUNC_SAVE_BEFORE_POWEROFF,NULL,NULL);
         }
         break;
@@ -142,12 +129,13 @@ void algo_message_handle(uint32_t id,uint8_t* data)
     }
 }
 
-void cwm_algo_task( void *pvParameters ){
-
-    //算法消息队列初始化
+void cwm_algo_task(void *pvParameters){
+    /*消息队列初始化*/
     algo_message_init();
 
-    //算法库初始化
+    /*不同平台之间有差异，在这里提供差异化的初始化接口*/
+    diskio_init();
+
     algo_init();
 
     period_ms = 1000/algo_get_odr();
@@ -169,13 +157,11 @@ void cwm_algo_task( void *pvParameters ){
         algo_test();
         #endif
 
-        // CWM_OS_dbgPrintf("[algo_task]: \n");
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(1000/algo_get_odr()));
+        period_ms = 1000/algo_get_odr();
+        // CWM_OS_dbgPrintf("[cwm_algo_task]: \n");
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(period_ms));
     }
 }
-
-
-
 
 /****************************************************外部调用接口************************************************/
 /*ctr=1:enable; 0:disable*/
@@ -188,11 +174,6 @@ void cwm_hs_algo_ctl(uint32_t ctr)
 {
     message_to_algo(E_ALGO_MSG_HS_ALGO_CTL,ctr);
 }
-// /*ctr=1:enable; 0:disable*/
-// void cwm_sensor_ctr(uint32_t ctr)
-// {
-//     message_to_algo(E_ALGO_MSG_SENSOR_CTL,ctr);
-// }
 /*
 enum{
     E_CALI_SPV_WHOLE = 1,

@@ -1,4 +1,4 @@
-#include "stdint.h"
+﻿#include "stdint.h"
 #include "string.h"
 #include "stdbool.h"
 #include "math.h"
@@ -123,7 +123,7 @@ static void algo_read_param_from_flash(void)
 
 
     //此处添加客户接口
-    struct original_eul_t ori_eul_value;
+    struct original_eul_t ori_eul_value ={0};
     diskio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
     
     uint8_t* ori_eul_addr = (uint8_t*)&ori_eul_value; 
@@ -179,11 +179,11 @@ static bool algo_quiet_process(uint8_t type, float *f)
 
             quiet_a[quiet_a_num++] = sqrt(ax*ax + ay*ay + az*az);
 
-            static float pre,current;
-            static uint32_t test_cts = 0;
-            current = sqrt(ax*ax + ay*ay + az*az);
+            // static float pre,current;
+            // static uint32_t test_cts = 0;
+            // current = sqrt(ax*ax + ay*ay + az*az);
             // CWM_OS_dbgPrintf("[algo]algo_quiet_process num=%d,a=%4f\n",test_cts++,fabs(current-pre));
-            pre = current;
+            // pre = current;
 
             if(quiet_a_num >= A_BUF_MAX) quiet_a_num = 0;
 
@@ -234,7 +234,7 @@ static void algo_ag_write(uint32_t id, float* f)
             buf->read = buf->write;
         }
     }else if((buf->data_type & SENSOR_ACC) && (SENSOR_ACC == id)){
-        memcpy(&buf->data[buf->write++].ax,f,4*3);
+        memcpy(&buf->data[buf->write].ax,f,4*3);
     }
 }
 static void algo_ag_read(void)
@@ -290,7 +290,7 @@ static void algo_res_read(void)
 }
 
 
-void OS_algo_listen(pSensorEVT_t sensorEVT) {
+static void OS_algo_listen(pSensorEVT_t sensorEVT) {
     float* f = sensorEVT->fData;
 	switch (sensorEVT->sensorType) {
 		case IDX_ACCEL:
@@ -451,6 +451,7 @@ void OS_algo_listen(pSensorEVT_t sensorEVT) {
         case 21:
             CWM_OS_dbgPrintf("[algo][21]: gyro auro cali: %f\n",
                 f[2]);
+        break;
         default:
             break;
     }
@@ -460,13 +461,34 @@ static void set_sensor(uint8_t en, uint8_t sensor, uint16_t odr, uint16_t power_
 {
     if (en) {
         SettingControl_t scl;
-        memcpy(&scl,dml_ag_config,sizeof(scl));
+        memset(&scl, 0, sizeof(scl));
+        scl.iData[0] = 1;
+        scl.iData[1] = 2;
+        CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
+        scl.iData[1] = 1;
+        scl.iData[8] = odr;
 	    CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
 
-        // memcpy(&scl,dml_ag_perf_config,sizeof(scl));
+        memset(&scl, 0, sizeof(scl));
+        scl.iData[0] = 1;
+        scl.iData[1] = odr;
+        scl.iData[2] = 2;
+        CWM_SettingControl(SCL_ALGO_PROC_CONFIG, &scl);
+
+        // memset(&scl, 0, sizeof(scl));
+        // scl.iData[0] = 1;
+        // scl.iData[1] = 2;
+        // CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
+        // scl.iData[1] = 1;
+        // // scl.iData[8] = odr;
 	    // CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
 
-        // memcpy(&scl,dml_mag_config,sizeof(scl));
+        // memset(&scl, 0, sizeof(scl));
+        // scl.iData[0] = 1;
+        // scl.iData[1] = 2;
+        // CWM_SettingControl(SCL_DML_DRV_M_CONFIG, &scl);
+        // scl.iData[1] = 1;
+        // scl.iData[8] = odr;
 	    // CWM_SettingControl(SCL_DML_DRV_M_CONFIG, &scl);
 
         memset(&scl, 0, sizeof(scl));
@@ -582,7 +604,7 @@ static void dml_algo_init(void)
     /* -----------algo_setting----------------- */
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
-    scl.iData[1] = ALGO_DEFAUL_ODR;
+    scl.iData[1] = CWM_DEFAUL_ODR;
     scl.iData[2] = 2;
     CWM_SettingControl(SCL_ALGO_PROC_CONFIG, &scl);
 
@@ -615,6 +637,9 @@ static void dml_algo_init(void)
 
     // memcpy(&scl,dml_mag_config,sizeof(scl));
 	// CWM_SettingControl(SCL_DML_DRV_M_CONFIG, &scl);
+
+    // memcpy(&scl,dml_ag_perf_config,sizeof(scl));
+    // CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
 
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
@@ -659,7 +684,7 @@ void algo_spv_cali_close(void* param);
 void algo_standby_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_open\n");
-    set_sensor(1,SENSOR_ACC,ALGO_DEFAUL_ODR/2,SENSOR_DEFAULT);
+    set_sensor(1,SENSOR_ACC,CWM_DEFAUL_ODR/2,SENSOR_DEFAULT);
 }
 void algo_standby_close(void* param)
 {
@@ -679,7 +704,7 @@ void algo_standby_spv_close(void* param)
 void algo_hs_orit_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_hs_orit_open\n");
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,ALGO_DEFAUL_ODR,SENSOR_DEFAULT);
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
     hs_algo_init();
 
     //打开自动校正
@@ -700,7 +725,7 @@ void algo_spv_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_cali_open=%d\n", *((uint32_t*)param));
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,ALGO_DEFAUL_ODR,SENSOR_DEFAULT);
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
     
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
@@ -715,7 +740,7 @@ void algo_orig_eul_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_open\n", *((uint32_t*)param));
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,ALGO_DEFAUL_ODR,SENSOR_DEFAULT);
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
     hs_algo_init();
 
     //打开自动校正
@@ -840,13 +865,11 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
 void algo_init(void)
 {
     CWM_OS_dbgPrintf("[algo]config version V%s\n",ALGO_CONFIG_VERSION);
-    //平台硬件初始化
-    diskio_init();
 
     //从 FLASH 中读出存储的算法数据
     memset((uint8_t*)&algo_dev_info,0,sizeof(algo_dev_info));
     algo_read_param_from_flash();
-    algo_set_odr(ALGO_DEFAUL_ODR);
+    algo_set_odr(CWM_DEFAUL_ODR);
 
     //ALGO&DML 初始化设置
     dml_algo_init();
@@ -893,7 +916,7 @@ void algo_data_handle(void)
         diskio_save_flash_cali((uint8_t*)&algo_dev_info.ag_cali_value,sizeof(struct ag_cali_back_t));
 
         /*写完 flash 后，再读取保存的数据，确保写成功*/
-        struct ag_cali_back_t cali_value;
+        struct ag_cali_back_t cali_value = {0};
         diskio_read_flash_cali((uint8_t*)&cali_value,sizeof(cali_value));
         struct ag_cali_back_t* p = &cali_value;
         CWM_OS_dbgPrintf("[algo]save :ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
@@ -937,7 +960,7 @@ void algo_data_handle(void)
             diskio_save_flash_eul((uint8_t*)&algo_dev_info.original_eul,sizeof(struct original_eul_t));
 
             /*写完 flash 后，再读取保存的数据，确保写成功*/
-            struct original_eul_t ori_eul_value;
+            struct original_eul_t ori_eul_value = {0};
             diskio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
             if(!memcmp(&algo_dev_info.original_eul,&ori_eul_value,sizeof(struct original_eul_t))){
                 CWM_OS_dbgPrintf("[algo]flash write original_eul succuss\n");
@@ -1016,10 +1039,8 @@ void algo_hs_algo_ctl(uint32_t ctr)
         CWM_Sensor_Enable(100);
     }
     else{
-
         CWM_Sensor_Disable(100);
     }
-
 }
 
 void algo_sensor_ctr(uint32_t ctr)
@@ -1087,19 +1108,19 @@ void algo_spv_cali_en(uint32_t mode)
     scl.iData[0] = 1;
     scl.iData[1] = 5; // z pluse point to sky
     scl.iData[2] = 5; // time-out period
-    scl.iData[3] = 50;       // odr
+    scl.iData[3] = CWM_DEFAUL_ODR;       // odr
     scl.iData[4] = 28400000; // gyro_Lsb_Dps
     scl.iData[5] = 3000;     // acc_noise
     scl.iData[6] = 120000;  // gyro_noise
     scl.iData[7] = 50000;   // acc_bias
     scl.iData[8] = 3300000; // gyro_bias
-    CWM_SettingControl(SCL_FACTORY_CALI_CONFIG, &scl);
+    CWM_SettingControl(SCL_SPV_CONFIG, &scl);
 
     // [1] = 1 整机校正， [1] = 2 PCBA校正，[1] = 5 六面校正
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
     scl.iData[1] = mode;
-    CWM_SettingControl(SCL_FACTORY_CALI_MODE, &scl);
+    CWM_SettingControl(SCL_SPV_MODE, &scl);
 
     CWM_Sensor_Enable(IDX_ALGO_SPV);
 }

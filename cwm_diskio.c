@@ -321,9 +321,9 @@ os_api diskio_os_api = {
 /****************************************************配置 sensor 相关参数************************************************/
 const int dml_vendor_config[16] = {1,2};
 const int dml_hw_config[16] = {1,2,0,0,0,0,3002301,1+8};
-const int dml_ag_config[16] = {1,1,1,2,1,0,25,22,ALGO_DEFAUL_ODR,16,1000,0,0};
+const int dml_ag_config[16] = {1,1,1,2,1,0,25,22,CWM_DEFAUL_ODR,16,1000,0,0};
 const int dml_ag_perf_config[16] = {1,0,0,0,0};
-const int dml_mag_config[16] = {1,1,1,1,1,0,0,4,ALGO_DEFAUL_ODR};
+const int dml_mag_config[16] = {1,1,1,1,1,0,0,4,CWM_DEFAUL_ODR};
 const int dml_hs_orien_config[16] = {1,6000,0,15,8,2,1,0,0,0,0,1,0,2};
 const int dml_hs_intf_config[16] = {1,0,3,11,7};                                            /*M3 {1,0,3,11,7}*/
 
@@ -387,14 +387,14 @@ void diskio_read_ag_avg_value(float *f)
 }
 void diskio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
 {
-    CWM_OS_dbgPrintf("[algo]orig eul cali:%d,%d,%d,\n",
+    CWM_OS_dbgPrintf("[algo]diskio_notify_spv_cali_result:%d,%d,%d,\n",
         whl,
         pcba,
         sixf); 
 }
 void diskio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
 {
-    CWM_OS_dbgPrintf("[algo]orig eul cali:%d,%d,\n",
+    CWM_OS_dbgPrintf("[algo]diskio_notify_ori_eul_cali_result:%d,%d,\n",
         steps,
         status);
 }
