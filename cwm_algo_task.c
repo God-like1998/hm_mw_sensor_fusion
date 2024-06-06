@@ -22,7 +22,7 @@
 /****************************************************************************************************/
 
 enum{
-     E_ALGO_MSG_LOG_DEBUG_CTL,
+    E_ALGO_MSG_LOG_DEBUG_CTL,
     E_ALGO_MSG_HS_ALGO_CTL,
     E_ALGO_MSG_SPV_CALI_EN,
     E_ALGO_MSG_SPV_CALI_DIS,
@@ -84,7 +84,7 @@ void algo_message_handle(uint32_t id,uint8_t* data)
         }
         break;
         case E_ALGO_MSG_SPV_CALI_DIS:{
-            algo_state_handle(E_STATE_SPV_WHOLE,E_ALGO_EVENT_CLOSE,NULL);
+            algo_spv_cali_disable_mode();
         }
         break;
         case E_ALGO_MSG_ORI_EUL_CALI_EN:{

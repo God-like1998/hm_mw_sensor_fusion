@@ -16,7 +16,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "SDK_HSET0.0.3.0"
+#define ALGO_CONFIG_VERSION "SDK_HSET0.0.4.0"
 #define ALGO_RES_MAX_COUNT  25
 
 
@@ -141,6 +141,7 @@ void algo_hs_algo_ctl(uint32_t ctr);
 void algo_sensor_ctr(uint32_t ctr);
 void algo_spv_cali_en(uint32_t mode);
 void algo_spv_cali_dis(void);
+void algo_spv_cali_disable_mode(void);
 void algo_original_eul_cali_en(uint32_t steps);
 void algo_original_eul_cali_dis(void);
 void algo_avg_ag_value_en(void);

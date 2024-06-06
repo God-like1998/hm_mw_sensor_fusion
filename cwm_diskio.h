@@ -12,7 +12,7 @@ extern "C"{
 #include "stdio.h"
 
 
-#define CWM_DEFAUL_ODR     52
+#define CWM_DEFAUL_ODR     50
 #define cwm_taskENTER_CRITICAL()  {if(pdFALSE == xPortIsInsideInterrupt()) {taskENTER_CRITICAL();}}
 #define cwm_taskEXIT_CRITICAL()   {if(pdFALSE == xPortIsInsideInterrupt()) {taskEXIT_CRITICAL();}}
 #define CWM_OS_dbgPrintf(format,...)  printf(format,##__VA_ARGS__)
@@ -32,7 +32,7 @@ void diskio_read_flash_eul(uint8_t* data,uint32_t len);
 void diskio_save_flash_eul(uint8_t* data,uint32_t len);
 
 void diskio_init(void);
-void diskio_read_ag(uint8_t type, float *f);
+void diskio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums);
 void diskio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf);
 void diskio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status);
 void diskio_read_eul_qua(float *f);

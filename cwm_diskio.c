@@ -36,23 +36,24 @@ static bool algo_atci_parse_cmd(char *string)
     switch(num)
     {
         case 1: 
-            printf("AT cmd AT+ALGO=1 to enable IDX(100)");
-            cwm_hs_algo_ctl(1);
-        break;
-
-        case 2: 
-            printf("AT cmd AT+ALGO=2 to disable IDX(100)");
-            cwm_hs_algo_ctl(0);
-        break;
-
-        case 3: 
-            printf("AT cmd AT+ALGO=3 to enable log debug");
+            printf("AT cmd AT+ALGO=1 to enable log debug");
             cwm_log_debug_ctl(1);
         break;
 
-        case 4: 
-            printf("AT cmd AT+ALGO=4 to disable log debug");
+        case 2: 
+            printf("AT cmd AT+ALGO=2 to disable log debug");
             cwm_log_debug_ctl(0);
+            
+        break;
+
+        case 3: 
+            printf("AT cmd AT+ALGO=3 to enable IDX(100)");
+            cwm_hs_algo_ctl(1);
+        break;
+
+        case 4: 
+            printf("AT cmd AT+ALGO=4 to disable IDX(100)");
+            cwm_hs_algo_ctl(0);
         break; 
 
         case 5: 
@@ -103,6 +104,7 @@ static bool algo_atci_parse_cmd(char *string)
         case 14:
             printf("AT cmd AT+ALGO=14 to get CWM_ALGO_GET_AUTO_CALIB_VALUE");
             cwm_save_before_poweroff();  
+        break;
         
     }
 
@@ -367,7 +369,7 @@ void diskio_init(void)
     algo_atci_init();
 
 }
-void diskio_read_ag(uint8_t type, float *f)
+void diskio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
     // CWM_OS_dbgPrintf("[algo]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
     //         f[0],f[1],f[2],
