@@ -1103,7 +1103,7 @@ void algo_data_handle(void)
         else if(2 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step2_status;
         else if(3 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step3_status;
         diskio_notify_ori_eul_cali_result(algo_dev_info.original_eul.running_steps,status);
-        CWM_OS_dbgPrintf("[algo]orig eul cali:%d,%d,%d,%d,\n",
+        CWM_OS_dbgPrintf("[algo]orig eul cali:runing_step =%d, step1_status=%d, step2_status=%d, step3_status=%d,\n",
             algo_dev_info.original_eul.running_steps,
             algo_dev_info.original_eul.step1_status,
             algo_dev_info.original_eul.step2_status,
