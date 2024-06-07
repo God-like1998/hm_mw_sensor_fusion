@@ -9,7 +9,28 @@
 #include "cwm_test.h"
 
 #if defined(ALGO_TEST_EN) && (1 == ALGO_TEST_EN)
-extern struct algo_info_t algo_dev_info;
+struct ag_cali_back_t{
+    /*工厂校正数据*/
+    uint16_t crc_16;//校验和 
+    uint16_t spv_whole_status: 2;//spv 整机校正状态
+    uint16_t spv_pcba_status: 2;//spv pcba 校正状态
+    uint16_t sixface_status: 2;//六面校正状态
+    uint16_t valid:1;//数据可用
+    int32_t ax;
+    int32_t ay;
+    int32_t az;
+    int32_t gx;
+    int32_t gy;
+    int32_t gz;
+
+    /*算法持续校正数据*/
+    uint16_t auto_crc_16;//校验和 
+    uint16_t auto_valid:1;//数据可用
+    int32_t auto_gx;
+    int32_t auto_gy;
+    int32_t auto_gz;
+};
+extern struct ag_cali_back_t* get_algo_dev_info_ag_cali_value(void);
 /**************************************************algo queue**************************************************/
 void test_print_calibration_value(void)
 {
@@ -17,6 +38,8 @@ void test_print_calibration_value(void)
     #define DYNAMIC_CALI_CHECK_TIME (1)    
     static uint32_t auto_cali_run_ticks = 0;
     static struct ag_cali_back_t ag_cali_value = {0};
+    struct ag_cali_back_t* cali_value_p = get_algo_dev_info_ag_cali_value();
+
     auto_cali_run_ticks++;
     if(auto_cali_run_ticks > (algo_get_odr()*DYNAMIC_CALI_CHECK_TIME)){
         auto_cali_run_ticks = 0;
@@ -41,9 +64,9 @@ void test_print_calibration_value(void)
             ag_cali_value.auto_gx,
             ag_cali_value.auto_gy,
             ag_cali_value.auto_gz,
-            ag_cali_value.auto_gx - algo_dev_info.ag_cali_value.gx,
-            ag_cali_value.auto_gy - algo_dev_info.ag_cali_value.gy,
-            ag_cali_value.auto_gz - algo_dev_info.ag_cali_value.gz);
+            ag_cali_value.auto_gx - cali_value_p->gx,
+            ag_cali_value.auto_gy - cali_value_p->gy,
+            ag_cali_value.auto_gz - cali_value_p->gz);
         }
     }
 }

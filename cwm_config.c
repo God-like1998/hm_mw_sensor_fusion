@@ -8,12 +8,114 @@
 #include "cwm_diskio.h"
 #include "cwm_port.h"
 
+/*版本号说明：SDK_EAR0.1.2.3
+SDK：表示该项目是 sdk 工程。其它项目可根据实际填入项目代号
+HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
+0：freertos；（zephyr ：1）
+1：sdk 大版本号
+2：sdk 小版本号
+3：fae 针对客户更新的版本号
+*/
+#define ALGO_CONFIG_VERSION "HM_M3_HSET0.0.4.3"
+#define ALGO_RES_MAX_COUNT  25
 
 #define SENSOR_ACC 1
 #define SENSOR_GYR 2
 #define SENSOR_DEFAULT  0
 #define SENSOR_LP1      1
 #define SENSOR_HP       2
+
+#define ALGO_QUIET_TIME_SEC     (60*10)
+#define ALGO_QUIET_LV1   (0.05f)
+#define ALGO_QUIET_LV2   (0.10f)
+#define ALGO_QUIET_LV3   (0.15f)
+#define ALGO_QUIET_LV4   (0.20f)
+#define ALGO_QUIET_LV5   (0.25f)
+#define ALGO_QUIET_LV6   (0.30f)
+#define ALGO_QUIET_LV7   (0.35f)
+#define ALGO_QUIET_LV8   (0.40f)
+#define ALGO_QUIET_LV9   (0.45f)
+#define ALGO_QUIET_LV10  (0.50f)
+#define ALGO_QUIET_LV11  (0.55f)
+#define ALGO_QUIET_LV12  (0.60f)
+#define ALGO_QUIET_LV13  (0.65f)
+#define ALGO_QUIET_LV14  (0.70f)
+#define ALGO_QUIET_LV15  (0.75f)
+#define ALGO_STANDBY_QUIET_THRESHOLD ALGO_QUIET_LV7
+
+enum{
+    E_STATE_LEV0,
+    E_STATE_LEV1,
+    E_STATE_LEV2,
+    E_STATE_LEV3,
+    E_ALGO_STATE_MAX,
+};
+
+struct ag_avg_t{
+    uint16_t a_cnts;
+    uint16_t g_cnts;
+    struct ag_t ag_sum;
+    struct ag_t ag;
+};
+struct algo_ag_t{
+    uint8_t size;
+    uint8_t write;
+    uint8_t read;
+    uint8_t data_type;
+    struct ag_t data[ALGO_RES_MAX_COUNT];
+};
+struct algo_res_t{
+    uint8_t size;
+    uint8_t write;
+    uint8_t read;
+    struct eul_qua_t data[ALGO_RES_MAX_COUNT];
+};
+struct ag_cali_back_t{
+    /*工厂校正数据*/
+    uint16_t crc_16;//校验和 
+    uint16_t spv_whole_status: 2;//spv 整机校正状态
+    uint16_t spv_pcba_status: 2;//spv pcba 校正状态
+    uint16_t sixface_status: 2;//六面校正状态
+    uint16_t valid:1;//数据可用
+    int32_t ax;
+    int32_t ay;
+    int32_t az;
+    int32_t gx;
+    int32_t gy;
+    int32_t gz;
+
+    /*算法持续校正数据*/
+    uint16_t auto_crc_16;//校验和 
+    uint16_t auto_valid:1;//数据可用
+    int32_t auto_gx;
+    int32_t auto_gy;
+    int32_t auto_gz;
+};
+struct original_eul_t{
+    uint16_t crc_16;
+    uint16_t step1_status:2;        //第一步校正状态
+    uint16_t step2_status:2;        //第二步校正状态
+    uint16_t step3_status:2;        //第三步校正状态
+    uint16_t running_steps:4;       //当前执行的校正步骤
+    uint16_t valid:1;//数据可用
+    float yaw;
+    float pitch;
+    float roll;
+};
+struct algo_info_t{
+    uint16_t odr;//算法 odr
+    uint16_t event_cali_finish:1;           //事件，用于通知保存校正数据
+    uint16_t event_orig_eul_finish:1;       //事件，用于通知保存原始角度数据
+    uint16_t event_ag_avg_value_1s_finish:1;//事件，用于通知 1s ag 平均值结束
+    uint16_t en_ag_avg_value_1s:1;          //开关，用于通知 1s ag 功能开关
+    struct ag_avg_t ag_avg_value_1s;
+    struct algo_ag_t algo_ag;   //sensor acc、gyro缓存
+    struct algo_res_t algo_res;//欧拉角和四元素缓存
+
+    //需要保存到 flash 的数据
+    struct ag_cali_back_t ag_cali_value;//acc、gyro 校正参数
+    struct original_eul_t original_eul;//初始化角度
+};
 
 struct algo_info_t algo_dev_info;
 
@@ -205,7 +307,7 @@ static bool algo_quiet_process(uint8_t type, float *f)
 }
 
 /*当 sensor 模式切换时（a->ag or ag->a or...），sensor 的 acc、gyro 缓存需要清除后重新开始缓存*/
-void algo_ag_buf_set(uint8_t data_type)
+static void algo_ag_buf_set(uint8_t data_type)
 {
     struct algo_ag_t* buf = &algo_dev_info.algo_ag;
     memset(buf,0,sizeof(struct algo_ag_t));
@@ -663,7 +765,7 @@ static void dml_algo_init(void)
         CWM_OS_dbgPrintf("[algo] DML device = [%d]: hw_id=%d hw_attr=%d\n", i, scl.iData[6 + i * 2], scl.iData[7 + i * 2]);
     }
 
-    /*开机 sensor 默认关闭驱动*/
+    /*开机 sensor 默认关闭*/
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
     scl.iData[1] = 1;   //[in/out] enable_method (default: manual_enable)   (0: default, 1: manual_enable, 2: auto_enable, -1: 取得參數值)
@@ -692,17 +794,17 @@ static void spv_dis(void)
     set_sensor(0,0,0,0);
 }
 
-void algo_standby_open(void* param)
+static void algo_standby_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_open\n");
     set_sensor(1,SENSOR_ACC,CWM_DEFAUL_ODR/2,SENSOR_DEFAULT);
 }
-void algo_standby_close(void* param)
+static void algo_standby_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_close\n");
     set_sensor(0,0,0,0);
 }
-void algo_standby_spv_open(void* param)
+static void algo_standby_spv_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_spv_open\n");
     set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
@@ -710,13 +812,13 @@ void algo_standby_spv_open(void* param)
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
 }
-void algo_standby_spv_close(void* param)
+static void algo_standby_spv_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_spv_close\n");
     spv_dis();
     algo_quiet_enable(false);
 }
-void algo_hs_orit_open(void* param)
+static void algo_hs_orit_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_hs_orit_open\n");
     set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
@@ -730,13 +832,13 @@ void algo_hs_orit_open(void* param)
 
     CWM_Sensor_Enable(100);
 }
-void algo_hs_orit_close(void* param)
+static void algo_hs_orit_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_hs_orit_close\n");
     CWM_Sensor_Disable(100);
     set_sensor(0,0,0,0);
 }
-void algo_spv_whl_cali_open(void* param)
+static void algo_spv_whl_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_whl_cali_open=%d\n", *((uint32_t*)param));
@@ -745,12 +847,12 @@ void algo_spv_whl_cali_open(void* param)
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
 }
-void algo_spv_whl_cali_close(void* param)
+static void algo_spv_whl_cali_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_spv_whl_cali_close\n");
     spv_dis();
 }
-void algo_spv_pcb_cali_open(void* param)
+static void algo_spv_pcb_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_pcb_cali_open=%d\n", *((uint32_t*)param));
@@ -759,12 +861,12 @@ void algo_spv_pcb_cali_open(void* param)
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
 }
-void algo_spv_pcb_cali_close(void* param)
+static void algo_spv_pcb_cali_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_spv_pcb_cali_close\n");
     spv_dis();
 }
-void algo_spv_sfa_cali_open(void* param)
+static void algo_spv_sfa_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_sfa_cali_open=%d\n", *((uint32_t*)param));
@@ -773,12 +875,12 @@ void algo_spv_sfa_cali_open(void* param)
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
 }
-void algo_spv_sfa_cali_close(void* param)
+static void algo_spv_sfa_cali_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_spv_sfa_cali_close\n");
     spv_dis();
 }
-void algo_orig_eul_cali_open(void* param)
+static void algo_orig_eul_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_open\n", *((uint32_t*)param));
@@ -794,14 +896,14 @@ void algo_orig_eul_cali_open(void* param)
     CWM_Sensor_Enable(100);
     algo_original_eul_cali_en(*((uint32_t*)param));
 }
-void algo_orig_eul_cali_close(void* param)
+static void algo_orig_eul_cali_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_close\n");
     CWM_Sensor_Disable(100);
     CWM_Sensor_Disable(112);
     set_sensor(0,0,0,0);
 }
-void algo_func_log_ctl(void* param)
+static void algo_func_log_ctl(void* param)
 {
     if(NULL ==  param)  return;
     uint32_t* ctr = (uint32_t*)param;
@@ -809,18 +911,16 @@ void algo_func_log_ctl(void* param)
     CWM_OS_dbgPrintf("[algo]algo_func_log_ctl\n");
     algo_log_debug_ctl(*ctr);
 }
-void algo_func_ag_avg_value(void* param)
+static void algo_func_ag_avg_value(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_func_ag_avg_value\n");
     algo_avg_ag_value_en();
 }
-void algo_func_save_before_poweroff(void* param)
+static void algo_func_save_before_poweroff(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_func_save_before_poweroff\n");
     algo_save_before_poweroff();
 }
-
-
 ////////////////////////////////////////////////////////////////算法状态管理////////////////////////////////////////////////////////
 /*算法状态分为 4 层：
     E_STATE_LEV3（最高）：
@@ -908,6 +1008,11 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
 
 
 ////////////////////////////////////////////////////////////////外部接口////////////////////////////////////////////////////////
+struct ag_cali_back_t* get_algo_dev_info_ag_cali_value(void)
+{
+    return &algo_dev_info.ag_cali_value;
+}
+
 void algo_init(void)
 {
     CWM_OS_dbgPrintf("[algo]config version V%s\n",ALGO_CONFIG_VERSION);
