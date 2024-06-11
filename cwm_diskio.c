@@ -371,35 +371,32 @@ void diskio_init(void)
 }
 void diskio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
-    // CWM_OS_dbgPrintf("[algo]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
+    // CWM_OS_dbgPrintf("[diskio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
     //         f[0],f[1],f[2],
     //         f[3],f[4],f[5]);
 }
 void diskio_read_eul_qua(float *f)
 {
-    // CWM_OS_dbgPrintf("[algo]read eul-qua: %f,%f,%f   ,%f,%f,%f,%f\n",
-    //         f[0],f[1],f[2],
-    //         f[3],f[4],f[5],f[6]);
+    CWM_OS_dbgPrintf("[diskio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
+            f[0],f[1],f[2],
+            f[3],f[4],f[5],f[6]);
 }
 void diskio_read_ag_avg_value(float *f)
 {
-
-    CWM_OS_dbgPrintf("[algo]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
+    CWM_OS_dbgPrintf("[diskio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5]);
 }
 void diskio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
 {
-
-    CWM_OS_dbgPrintf("[algo]diskio_notify_spv_cali_result: whl=%d, pcba=%d, sixf=%d,\n",
+    CWM_OS_dbgPrintf("[diskio]diskio_notify_spv_cali_result : whl=%d pcba=%d sixf=%d  [2==success / 0==fail]\n",
         whl,
         pcba,
         sixf); 
 }
 void diskio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
 {
-
-    CWM_OS_dbgPrintf("[algo]diskio_notify_ori_eul_cali_result: steps=%d, status=%d,\n",
+    CWM_OS_dbgPrintf("[diskio]diskio_notify_ori_eul_cali_result: runing steps=%d status=%d  [2==success / 0==fail]\n",
         steps,
         status);
 }
