@@ -35,25 +35,24 @@ static bool algo_atci_parse_cmd(char *string)
     printf("string num = %d",num);
     switch(num)
     {
-        case 1: 
-            printf("AT cmd AT+ALGO=1 to enable log debug");
-            cwm_log_debug_ctl(1);
-        break;
-
-        case 2: 
-            printf("AT cmd AT+ALGO=2 to disable log debug");
-            cwm_log_debug_ctl(0);
-            
-        break;
-
-        case 3: 
-            printf("AT cmd AT+ALGO=3 to enable IDX(100)");
+        case 1:
+            printf("AT cmd AT+ALGO=1 to enable IDX(100)");
             cwm_hs_algo_ctl(1);
         break;
 
+        case 2:
+            printf("AT cmd AT+ALGO=2 to disable IDX(100)");
+            cwm_hs_algo_ctl(0); 
+        break;
+
+        case 3: 
+            printf("AT cmd AT+ALGO=3 to enable log debug");
+            cwm_log_debug_ctl(1);
+        break;
+
         case 4: 
-            printf("AT cmd AT+ALGO=4 to disable IDX(100)");
-            cwm_hs_algo_ctl(0);
+            printf("AT cmd AT+ALGO=4 to disable log debug");
+            cwm_log_debug_ctl(0);
         break; 
 
         case 5: 
