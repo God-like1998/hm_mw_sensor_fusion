@@ -5,9 +5,9 @@ HM_MW_SENSOR_FUSION_SRC = project/ab15xx/apps/headset_ref_design/harman/middlewa
 C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_algo_task.c
 C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_diskio.c
 
-# C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_common.c
-# C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_config.c
-# C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_test.c
+C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_common.c
+C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_config.c
+C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_test.c
 
 
 
@@ -17,6 +17,6 @@ CFLAGS += -I$(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middlewa
 
 LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/lib/CWM_LIB_DML_gcc_m4.a
 LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/lib/CWM_LIB_gcc_m4.a
-LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/cwm_app.a
+# LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/cwm_app.a
 
 
