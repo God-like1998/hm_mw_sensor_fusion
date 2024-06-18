@@ -8,9 +8,9 @@ extern "C"{
 #include "stdint.h"
 
 enum{
-    E_CALI_FAIL,
-    E_CALI_RUNNING,
-    E_CALI_SUCCESS,
+    E_CALI_FAIL,//失败
+    E_CALI_RUNNING,//执行中
+    E_CALI_SUCCESS,//成功
 };
 enum{
     E_CALI_SPV_WHOLE = 1,
@@ -18,43 +18,43 @@ enum{
     E_CALI_SIX_FACE = 5,
 };
 enum{
-    E_ORI_EUL_CALI_FAIL,
-    E_ORI_EUL_CALI_RUNNING,
-    E_ORI_EUL_CALI_SUCCESS,
+    E_ORI_EUL_CALI_FAIL,//失败
+    E_ORI_EUL_CALI_RUNNING,//执行中
+    E_ORI_EUL_CALI_SUCCESS,//成功
 };
 enum{
-    E_ANGLE_INIT_STEP1 = 1,
-    E_ANGLE_INIT_STEP2 = 2,
-    E_ANGLE_INIT_STEP3 = 3,
+    E_ANGLE_INIT_STEP1 = 1,//第一步
+    E_ANGLE_INIT_STEP2 = 2,//第二步
+    E_ANGLE_INIT_STEP3 = 3,//第三步
 };
 
 
 struct acc_t{
-    float ax;
-    float ay;
-    float az;
+    float ax;//单位：m/s^2
+    float ay;//单位：m/s^2
+    float az;//单位：m/s^2
 };
 struct gyro_t{
-    float gx;
-    float gy;
-    float gz;
+    float gx;//单位：rad/s
+    float gy;//单位：rad/s
+    float gz;//单位：rad/s
 };
 struct ag_t{
-    float ax;
-    float ay;
-    float az;
-    float gx;
-    float gy;
-    float gz;
+    float ax;//单位：m/s^2
+    float ay;//单位：m/s^2
+    float az;//单位：m/s^2
+    float gx;//单位：rad/s
+    float gy;//单位：rad/s
+    float gz;//单位：rad/s
 };
 struct eul_qua_t{
-    float yaw;
-    float pitch;
-    float roll;
-    float x;
-    float y;
-    float z;
-    float w;
+    float yaw;  //(degrees)
+    float pitch;//(degrees)
+    float roll; //(degrees)
+    float x;    //quaternion_x
+    float y;    //quaternion_y
+    float z;    //quaternion_z
+    float w;    //quaternion_w
 };
 
 

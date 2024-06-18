@@ -18,6 +18,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 */
 #define ALGO_CONFIG_VERSION "HM_M3_HSET0.0.4.3"
 #define ALGO_RES_MAX_COUNT  25
+#define STANDBY_ODR 25
 
 #define SENSOR_ACC 1
 #define SENSOR_GYR 2
@@ -25,30 +26,18 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 #define SENSOR_LP1      1
 #define SENSOR_HP       2
 
-#define ALGO_QUIET_TIME_SEC     (60*10)
-#define ALGO_QUIET_LV1   (0.05f)
-#define ALGO_QUIET_LV2   (0.10f)
-#define ALGO_QUIET_LV3   (0.15f)
-#define ALGO_QUIET_LV4   (0.20f)
-#define ALGO_QUIET_LV5   (0.25f)
-#define ALGO_QUIET_LV6   (0.30f)
-#define ALGO_QUIET_LV7   (0.35f)
-#define ALGO_QUIET_LV8   (0.40f)
-#define ALGO_QUIET_LV9   (0.45f)
-#define ALGO_QUIET_LV10  (0.50f)
-#define ALGO_QUIET_LV11  (0.55f)
-#define ALGO_QUIET_LV12  (0.60f)
-#define ALGO_QUIET_LV13  (0.65f)
-#define ALGO_QUIET_LV14  (0.70f)
-#define ALGO_QUIET_LV15  (0.75f)
-#define ALGO_STANDBY_QUIET_THRESHOLD ALGO_QUIET_LV7
-
 enum{
     E_STATE_LEV0,
     E_STATE_LEV1,
     E_STATE_LEV2,
     E_STATE_LEV3,
     E_ALGO_STATE_MAX,
+};
+struct sensor_setting_t{
+    uint16_t odr;
+    uint16_t power_mode;
+    uint16_t acc_range;
+    uint16_t gyro_range;
 };
 
 struct ag_avg_t{
@@ -123,7 +112,7 @@ struct algo_info_t algo_dev_info;
 #define CLOSE(a,param) {if(NULL != a->close) a->close(param);}
 struct algo_t{
     uint16_t id;
-    uint8_t levle;
+    uint8_t level;
     uint8_t is_recoverable;
     void (*open)(void*);
     void (*handle)(void*);
@@ -267,7 +256,7 @@ static void algo_quiet_disable(void)
 static void algo_quiet_check_time(void)
 {
     time_cnts++;
-    if(time_cnts > algo_get_odr()*ALGO_QUIET_TIME_SEC){
+    if(time_cnts > algo_get_odr()*algo_quiet_timeout_min){
         time_cnts = 0;
         algo_quiet_enable(true);
     }
@@ -294,8 +283,8 @@ static bool algo_quiet_process(uint8_t type, float *f)
             if(quiet_a_num >= A_BUF_MAX) quiet_a_num = 0;
 
             for (int i = 1; i < A_BUF_MAX; i++) {
-                if(fabs(quiet_a[i] - quiet_a[i - 1]) > ALGO_STANDBY_QUIET_THRESHOLD) {
-                    // CWM_OS_dbgPrintf("[algo]algo_quiet_process a:%d,%4f,%4f,%4f,%4f\n",i,fabs(quiet_a[i] - quiet_a[i - 1]),quiet_a[i - 1],quiet_a[i],ALGO_STANDBY_QUIET_THRESHOLD);
+                if(fabs(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
+                    // CWM_OS_dbgPrintf("[algo]algo_quiet_process a:%d,%4f,%4f,%4f,%4f\n",i,fabs(quiet_a[i] - quiet_a[i - 1]),quiet_a[i - 1],quiet_a[i],algo_quiet_lev);
                     return false;
                 }
             }
@@ -568,7 +557,7 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
     }
 }
 
-static void set_sensor(uint8_t en, uint8_t sensor, uint16_t odr, uint16_t power_mode)
+static void set_sensor(uint8_t en, uint8_t sensor, struct sensor_setting_t* setting)
 {
     if (en) {
         SettingControl_t scl;
@@ -577,12 +566,15 @@ static void set_sensor(uint8_t en, uint8_t sensor, uint16_t odr, uint16_t power_
         scl.iData[1] = 2;
         CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
         scl.iData[1] = 1;
-        scl.iData[8] = odr;
+        scl.iData[8] = setting->odr;
+        scl.iData[9] = setting->acc_range;
+        scl.iData[10] = setting->gyro_range;
 	    CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
+        algo_set_odr(scl.iData[8]);
 
         memset(&scl, 0, sizeof(scl));
         scl.iData[0] = 1;
-        scl.iData[1] = odr;
+        scl.iData[1] = setting->odr;
         scl.iData[2] = 2;
         CWM_SettingControl(SCL_ALGO_PROC_CONFIG, &scl);
 
@@ -613,11 +605,10 @@ static void set_sensor(uint8_t en, uint8_t sensor, uint16_t odr, uint16_t power_
         scl.iData[2] = sensor;
         CWM_SettingControl(SCL_DML_DRV_ENABLE, &scl);
 
-        if(sensor & 1) CWM_Sensor_Enable(IDX_ACCEL);
-        if(sensor & 2) CWM_Sensor_Enable(IDX_GYRO);
+        if(sensor & SENSOR_ACC) CWM_Sensor_Enable(IDX_ACCEL);
+        if(sensor & SENSOR_GYR) CWM_Sensor_Enable(IDX_GYRO);
 
         algo_ag_buf_set(sensor);
-        algo_set_odr(odr);
     }else{
         SettingControl_t scl;
         memset(&scl, 0, sizeof(scl));
@@ -715,7 +706,7 @@ static void dml_algo_init(void)
     /* -----------algo_setting----------------- */
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
-    scl.iData[1] = CWM_DEFAUL_ODR;
+    scl.iData[1] = defautl_odr;
     scl.iData[2] = 2;
     CWM_SettingControl(SCL_ALGO_PROC_CONFIG, &scl);
 
@@ -745,6 +736,7 @@ static void dml_algo_init(void)
 
     memcpy(&scl,dml_ag_config,sizeof(scl));
 	CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
+    algo_set_odr(scl.iData[8]);
 
     // memcpy(&scl,dml_mag_config,sizeof(scl));
 	// CWM_SettingControl(SCL_DML_DRV_M_CONFIG, &scl);
@@ -791,23 +783,31 @@ static void dml_algo_init(void)
 static void spv_dis(void)
 {
     CWM_Sensor_Disable(IDX_ALGO_SPV);
-    set_sensor(0,0,0,0);
+    struct sensor_setting_t setting = {0,0,0,0};
+    set_sensor(0,0,&setting);
 }
 
 static void algo_standby_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_open\n");
-    set_sensor(1,SENSOR_ACC,CWM_DEFAUL_ODR/2,SENSOR_DEFAULT);
+    struct sensor_setting_t setting = {STANDBY_ODR,SENSOR_DEFAULT,4,2000};
+    set_sensor(1,SENSOR_ACC,&setting);
 }
 static void algo_standby_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_close\n");
-    set_sensor(0,0,0,0);
+    struct sensor_setting_t setting = {0,0,0,0};
+    set_sensor(0,0,&setting);
 }
 static void algo_standby_spv_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_spv_open\n");
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
+    struct sensor_setting_t setting;
+    setting.odr = defautl_odr;
+    setting.power_mode = SENSOR_DEFAULT;
+    setting.acc_range = dml_ag_config[9];
+    setting.gyro_range = dml_ag_config[10];    
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,&setting);
     
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
@@ -821,7 +821,12 @@ static void algo_standby_spv_close(void* param)
 static void algo_hs_orit_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_hs_orit_open\n");
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
+    struct sensor_setting_t setting;
+    setting.odr = defautl_odr;
+    setting.power_mode = SENSOR_DEFAULT;
+    setting.acc_range = dml_ag_config[9];
+    setting.gyro_range = dml_ag_config[10];    
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,&setting);
     hs_algo_init();
 
     //打开自动校正
@@ -836,13 +841,19 @@ static void algo_hs_orit_close(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_hs_orit_close\n");
     CWM_Sensor_Disable(100);
-    set_sensor(0,0,0,0);
+    struct sensor_setting_t setting = {0,0,0,0};
+    set_sensor(0,0,&setting);
 }
 static void algo_spv_whl_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_whl_cali_open=%d\n", *((uint32_t*)param));
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
+    struct sensor_setting_t setting;
+    setting.odr = defautl_odr;
+    setting.power_mode = SENSOR_DEFAULT;
+    setting.acc_range = dml_ag_config[9];
+    setting.gyro_range = dml_ag_config[10];    
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,&setting);
     
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
@@ -856,7 +867,12 @@ static void algo_spv_pcb_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_pcb_cali_open=%d\n", *((uint32_t*)param));
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
+    struct sensor_setting_t setting;
+    setting.odr = defautl_odr;
+    setting.power_mode = SENSOR_DEFAULT;
+    setting.acc_range = dml_ag_config[9];
+    setting.gyro_range = dml_ag_config[10];    
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,&setting);
     
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
@@ -870,7 +886,12 @@ static void algo_spv_sfa_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_spv_sfa_cali_open=%d\n", *((uint32_t*)param));
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
+    struct sensor_setting_t setting;
+    setting.odr = defautl_odr;
+    setting.power_mode = SENSOR_DEFAULT;
+    setting.acc_range = dml_ag_config[9];
+    setting.gyro_range = dml_ag_config[10];    
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,&setting);
     
     uint32_t mode = *((uint32_t*)param);
     algo_spv_cali_en(mode);
@@ -884,7 +905,12 @@ static void algo_orig_eul_cali_open(void* param)
 {
     if(NULL == param)   return;
     CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_open\n", *((uint32_t*)param));
-    set_sensor(1,SENSOR_ACC+SENSOR_GYR,CWM_DEFAUL_ODR,SENSOR_DEFAULT);
+    struct sensor_setting_t setting;
+    setting.odr = defautl_odr;
+    setting.power_mode = SENSOR_DEFAULT;
+    setting.acc_range = dml_ag_config[9];
+    setting.gyro_range = dml_ag_config[10];    
+    set_sensor(1,SENSOR_ACC+SENSOR_GYR,&setting);
     hs_algo_init();
 
     //打开自动校正
@@ -901,7 +927,8 @@ static void algo_orig_eul_cali_close(void* param)
     CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_close\n");
     CWM_Sensor_Disable(100);
     CWM_Sensor_Disable(112);
-    set_sensor(0,0,0,0);
+    struct sensor_setting_t setting = {0,0,0,0};
+    set_sensor(0,0,&setting);
 }
 static void algo_func_log_ctl(void* param)
 {
@@ -965,15 +992,15 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
         if(NULL == algo) {CWM_OS_dbgPrintf("[algo]algo_state_handle algo NULL\n");break;}
 
         if(id == algo->id){
-            if((E_ALGO_EVENT_OPEN == event) && (algo->levle < E_ALGO_STATE_MAX)){
+            if((E_ALGO_EVENT_OPEN == event) && (algo->level < E_ALGO_STATE_MAX)){
                 if(NULL != algo_current){
-                    {CWM_OS_dbgPrintf("[algo]algo_state_handle lv %u >? %u \n",algo->levle,algo_current->levle);}
+                    {CWM_OS_dbgPrintf("[algo]algo_state_handle lv %u >? %u \n",algo->level,algo_current->level);}
                     /*
                     先关闭低优先级或同级状态,
                     再执行高优先级状态,
                     如果是同一个状态，则不 close，直接 open       
                     */
-                    if((algo->levle >= algo_current->levle)){
+                    if((algo->level >= algo_current->level)){
                         if(algo->id !=  algo_current->id)
                             CLOSE(algo_current,param);
                         OPEN(algo,param);
@@ -984,13 +1011,13 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
                 }
 
                 algo_current = algo;
-                if(algo->is_recoverable) algo_current_lev[algo->levle] = algo;
-            }else if((E_ALGO_EVENT_CLOSE == event) && (algo->levle < E_ALGO_STATE_MAX)){
-                algo_current_lev[algo->levle] = NULL;
+                if(algo->is_recoverable) algo_current_lev[algo->level] = algo;
+            }else if((E_ALGO_EVENT_CLOSE == event) && (algo->level < E_ALGO_STATE_MAX)){
+                algo_current_lev[algo->level] = NULL;
                 CLOSE(algo,param);
                 
                 /*返回低一级状态*/
-                uint16_t level = algo->levle;
+                uint16_t level = algo->level;
                 while(level){
                     if(NULL != algo_current_lev[level - 1]){
                         OPEN(algo_current_lev[level - 1],param);
@@ -1015,12 +1042,11 @@ struct ag_cali_back_t* get_algo_dev_info_ag_cali_value(void)
 
 void algo_init(void)
 {
-    CWM_OS_dbgPrintf("[algo]config version V%s\n",ALGO_CONFIG_VERSION);
+    CWM_OS_dbgPrintf("[algo]config version %s\n",ALGO_CONFIG_VERSION);
 
-    //从 FLASH 中读出存储的算法数据
+    //从 FLASH 中读取 acc,gyro 校正参数和初始角度
     memset((uint8_t*)&algo_dev_info,0,sizeof(algo_dev_info));
     algo_read_param_from_flash();
-    algo_set_odr(CWM_DEFAUL_ODR);
 
     //ALGO&DML 初始化设置
     dml_algo_init();
@@ -1039,7 +1065,7 @@ void algo_set_odr(uint16_t odr)
     if(odr)
         algo_dev_info.odr = odr;
     else
-        algo_dev_info.odr = 25;
+        algo_dev_info.odr = STANDBY_ODR;
 }
 
 static void save_cali_value(void)
@@ -1268,7 +1294,7 @@ void algo_spv_cali_en(uint32_t mode)
     scl.iData[0] = 1;
     scl.iData[1] = 5; // z pluse point to sky
     scl.iData[2] = 5; // time-out period
-    scl.iData[3] = CWM_DEFAUL_ODR;       // odr
+    scl.iData[3] = defautl_odr;       // odr
     scl.iData[4] = 28400000; // gyro_Lsb_Dps
     scl.iData[5] = 3000;     // acc_noise
     scl.iData[6] = 120000;  // gyro_noise

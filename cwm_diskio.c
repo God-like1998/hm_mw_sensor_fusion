@@ -320,6 +320,8 @@ os_api diskio_os_api = {
 };
 
 /****************************************************配置 sensor 相关参数************************************************/
+#define CWM_DEFAUL_ODR     50
+const uint16_t defautl_odr = CWM_DEFAUL_ODR;
 const int dml_vendor_config[16] = {1,2};
 const int dml_hw_config[16] = {1,2,0,0,0,0,3002301,1+8};
 const int dml_ag_config[16] = {1,1,1,2,1,0,25,22,CWM_DEFAUL_ODR,16,1000,0,0};
@@ -327,6 +329,8 @@ const int dml_ag_perf_config[16] = {1,0,0,0,0};
 const int dml_mag_config[16] = {1,1,1,1,1,0,0,4,CWM_DEFAUL_ODR};
 const int dml_hs_orien_config[16] = {1,6000,0,15,8,2,1,0,0,0,0,1,0,2};
 const int dml_hs_intf_config[16] = {1,0,3,11,7};                                            /*M3 {1,0,3,11,7}*/
+const float algo_quiet_lev = 0.35f;
+const uint32_t algo_quiet_timeout_min = 60*10;
 
 /****************************************************flash 读写需要实现的接口************************************************/
 void diskio_read_flash_cali(uint8_t* data,uint32_t len)
@@ -368,24 +372,76 @@ void diskio_init(void)
     algo_atci_init();
 
 }
+/*算法输出 ag 数据，在算法设置中调用，
+type：
+    bit0:    1: ACC
+    bit1:    2: GYRO
+float *f:
+    struct ag_t{
+        float ax;//单位：m/s^2
+        float ay;//单位：m/s^2
+        float az;//单位：m/s^2
+        float gx;//单位：rad/s
+        float gy;//单位：rad/s
+        float gz;//单位：rad/s
+    };
+uint8_t idx:
+    当前 ag 数据包序号
+uint8_t nums：
+     ag 数据总包数
+*/
 void diskio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
     // CWM_OS_dbgPrintf("[diskio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
     //         f[0],f[1],f[2],
     //         f[3],f[4],f[5]);
 }
+/*算法输出欧拉角和四元素数据：在算法设置中调用，
+float *f:
+    struct eul_qua_t{
+        float yaw;  //(degrees)
+        float pitch;//(degrees)
+        float roll; //(degrees)
+        float x;    //quaternion_x
+        float y;    //quaternion_y
+        float z;    //quaternion_z
+        float w;    //quaternion_w
+    };
+*/
 void diskio_read_eul_qua(float *f)
 {
     CWM_OS_dbgPrintf("[diskio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5],f[6]);
 }
+/*算法输出 ag 数据 1s 平均值，在算法设置中调用，
+float *f:
+    struct ag_t{
+        float ax;//单位：m/s^2
+        float ay;//单位：m/s^2
+        float az;//单位：m/s^2
+        float gx;//单位：rad/s
+        float gy;//单位：rad/s
+        float gz;//单位：rad/s
+    };
+*/
 void diskio_read_ag_avg_value(float *f)
 {
     CWM_OS_dbgPrintf("[diskio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5]);
 }
+/*算法输出 spv 校正结果，在算法设置中调用，
+校正结果枚举：
+    enum{
+        E_CALI_FAIL,//失败
+        E_CALI_RUNNING,//执行中
+        E_CALI_SUCCESS,//成功
+    };
+whl：整机校正结果。
+pcba：pcba 校正结果。
+sixf：六面校正结果。
+*/
 void diskio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
 {
     CWM_OS_dbgPrintf("[diskio]diskio_notify_spv_cali_result : whl=%d pcba=%d sixf=%d  [2==success / 0==fail]\n",
@@ -393,6 +449,20 @@ void diskio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
         pcba,
         sixf); 
 }
+/*算法输出初始化角度校正结果，在算法设置中调用，
+steps：当前校正步骤：
+    enum{
+        E_ANGLE_INIT_STEP1 = 1,//第一步
+        E_ANGLE_INIT_STEP2 = 2,//第二步
+        E_ANGLE_INIT_STEP3 = 3,//第三步
+    };
+status：当前校正步骤结果：
+    enum{
+        E_ORI_EUL_CALI_FAIL,//失败
+        E_ORI_EUL_CALI_RUNNING,//执行中
+        E_ORI_EUL_CALI_SUCCESS,//成功
+    };
+*/
 void diskio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
 {
     CWM_OS_dbgPrintf("[diskio]diskio_notify_ori_eul_cali_result: runing steps=%d status=%d  [2==success / 0==fail]\n",

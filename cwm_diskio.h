@@ -12,12 +12,12 @@ extern "C"{
 #include "stdio.h"
 
 
-#define CWM_DEFAUL_ODR     50
 #define cwm_taskENTER_CRITICAL()  {if(pdFALSE == xPortIsInsideInterrupt()) {taskENTER_CRITICAL();}}
 #define cwm_taskEXIT_CRITICAL()   {if(pdFALSE == xPortIsInsideInterrupt()) {taskEXIT_CRITICAL();}}
 #define CWM_OS_dbgPrintf(format,...)  printf(format,##__VA_ARGS__)
 
 extern os_api diskio_os_api;
+extern const uint16_t defautl_odr;
 extern const int dml_vendor_config[16];
 extern const int dml_hw_config[16];
 extern const int dml_ag_config[16];
@@ -25,6 +25,8 @@ extern const int dml_ag_perf_config[16];
 extern const int dml_mag_config[16];
 extern const int dml_hs_orien_config[16] ;
 extern const int dml_hs_intf_config[16];
+extern const float algo_quiet_lev;
+extern const uint32_t algo_quiet_timeout_min;
 
 void diskio_read_flash_cali(uint8_t* data,uint32_t len);
 void diskio_save_flash_cali(uint8_t* data,uint32_t len);
