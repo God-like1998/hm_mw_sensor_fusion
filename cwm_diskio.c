@@ -329,7 +329,7 @@ const int dml_ag_perf_config[16] = {1,0,0,0,0};
 const int dml_mag_config[16] = {1,1,1,1,1,0,0,4,CWM_DEFAUL_ODR};
 const int dml_hs_orien_config[16] = {1,6000,0,15,8,2,1,0,0,0,0,1,0,2};
 const int dml_hs_intf_config[16] = {1,0,3,11,7};                                            /*M3 {1,0,3,11,7}*/
-const float algo_quiet_lev = 0.35f;
+const float algo_quiet_lev = 0.30f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 
 /****************************************************flash 读写需要实现的接口************************************************/
