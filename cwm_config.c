@@ -18,13 +18,12 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 */
 #define ALGO_CONFIG_VERSION "HM_M3_HSET0.0.4.3"
 #define ALGO_RES_MAX_COUNT  25
-#define STANDBY_ODR 25
+#define STANDBY_ODR 30
 
 #define SENSOR_ACC 1
 #define SENSOR_GYR 2
 #define SENSOR_DEFAULT  0
-#define SENSOR_LP1      1
-#define SENSOR_HP       2
+#define SENSOR_STANDBY  1
 
 enum{
     E_STATE_LEV0,
@@ -578,13 +577,16 @@ static void set_sensor(uint8_t en, uint8_t sensor, struct sensor_setting_t* sett
         scl.iData[2] = 2;
         CWM_SettingControl(SCL_ALGO_PROC_CONFIG, &scl);
 
-        // memset(&scl, 0, sizeof(scl));
-        // scl.iData[0] = 1;
-        // scl.iData[1] = 2;
-        // CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
-        // scl.iData[1] = 1;
-        // // scl.iData[8] = odr;
-	    // CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
+        memset(&scl, 0, sizeof(scl));
+        if(SENSOR_DEFAULT == setting->power_mode){
+            memcpy(&scl,dml_ag_pref_config_default,sizeof(scl));
+            CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
+        }
+        else if(SENSOR_STANDBY == setting->power_mode){
+            memcpy(&scl,dml_ag_pref_config_standby,sizeof(scl));
+            CWM_SettingControl(SCL_DML_DRV_AG_PERF_CONFIG, &scl);
+        }
+        
 
         // memset(&scl, 0, sizeof(scl));
         // scl.iData[0] = 1;
@@ -790,7 +792,7 @@ static void spv_dis(void)
 static void algo_standby_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_open\n");
-    struct sensor_setting_t setting = {STANDBY_ODR,SENSOR_DEFAULT,4,2000};
+    struct sensor_setting_t setting = {STANDBY_ODR,SENSOR_STANDBY,4,2000};
     set_sensor(1,SENSOR_ACC,&setting);
 }
 static void algo_standby_close(void* param)

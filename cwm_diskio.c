@@ -325,10 +325,11 @@ const uint16_t defautl_odr = CWM_DEFAUL_ODR;
 const int dml_vendor_config[16] = {1,2};
 const int dml_hw_config[16] = {1,2,0,0,0,0,3002301,1+8};
 const int dml_ag_config[16] = {1,1,1,2,1,0,25,22,CWM_DEFAUL_ODR,16,1000,0,0};
-const int dml_ag_perf_config[16] = {1,0,0,0,0};
 const int dml_mag_config[16] = {1,1,1,1,1,0,0,4,CWM_DEFAUL_ODR};
 const int dml_hs_orien_config[16] = {1,6000,0,15,8,2,1,0,0,0,0,1,0,2};
 const int dml_hs_intf_config[16] = {1,0,3,11,7};                                            /*M3 {1,0,3,11,7}*/
+const int dml_ag_pref_config_default[16] = {1,0,0,150,120,100};
+const int dml_ag_pref_config_standby[16] = {1,0,0,100};
 const float algo_quiet_lev = 0.30f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 

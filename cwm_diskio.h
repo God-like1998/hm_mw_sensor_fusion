@@ -21,10 +21,11 @@ extern const uint16_t defautl_odr;
 extern const int dml_vendor_config[16];
 extern const int dml_hw_config[16];
 extern const int dml_ag_config[16];
-extern const int dml_ag_perf_config[16];
 extern const int dml_mag_config[16];
 extern const int dml_hs_orien_config[16] ;
 extern const int dml_hs_intf_config[16];
+extern const int dml_ag_pref_config_default[16];
+extern const int dml_ag_pref_config_standby[16];
 extern const float algo_quiet_lev;
 extern const uint32_t algo_quiet_timeout_min;
 
