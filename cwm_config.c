@@ -262,6 +262,7 @@ static void algo_quiet_check_time(void)
 }
 static bool algo_quiet_process(uint8_t type, float *f)
 {
+    CWM_OS_dbgPrintf("MMMMA fg_quiet %d\n",fg_quiet);
     if((fg_quiet) && (NULL != algo_current)){
         // CWM_OS_dbgPrintf("[algo]algo_quiet_process id=%u,ty=%u\n",algo_current->id,type);
         if((E_STATE_STANDBY == algo_current->id) && (type & SENSOR_ACC)){
@@ -718,7 +719,7 @@ static void dml_algo_init(void)
     
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
-    scl.iData[3] = 1 + 4 + 8;
+    scl.iData[3] = 1 + 2 + 4 + 8;
     scl.iData[4] = 64 + 5;
     scl.iData[5] = 3;
     // scl.iData[5] = 3+16;
@@ -1187,7 +1188,7 @@ void algo_log_debug_ctl(uint32_t ctr)
     {
         memset(&scl, 0, sizeof(scl));
         scl.iData[0] = 1;
-        scl.iData[3] = 1 + 4 + 8;
+        scl.iData[3] = 1 + 2 + 4 + 8;
         scl.iData[4] = 64 + 5;
         scl.iData[5] = 3;
         // scl.iData[5] = 3+16;
