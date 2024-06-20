@@ -269,28 +269,27 @@ static bool algo_quiet_process(uint8_t type, float *f)
             float ay = f[1];
             float az = f[2];
 
+            quiet_a[quiet_a_num] = sqrt(ax*ax + ay*ay + az*az);
+            CWM_OS_dbgPrintf("[algo]algo_quiet_process quiet_a[%d] = %f\n",quiet_a_num,quiet_a[quiet_a_num]);
+            quiet_a_num++;
 
-            // CWM_OS_dbgPrintf("[algo]algo_quiet_process num=%d\n",quiet_a_num);
-
-            quiet_a[quiet_a_num++] = sqrt(ax*ax + ay*ay + az*az);
-
-            // static float pre,current;
-            // current = sqrt(ax*ax + ay*ay + az*az);
-            // CWM_OS_dbgPrintf("[algo]algo_quiet_process a=%4f,%4f\n",pre,current);
-            // pre = current;
-
-            if(quiet_a_num >= A_BUF_MAX) quiet_a_num = 0;
-
-            for (int i = 1; i < A_BUF_MAX; i++) {
-                if(fabs(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
-                    // CWM_OS_dbgPrintf("[algo]algo_quiet_process a:%d,%4f,%4f,%4f,%4f\n",i,fabs(quiet_a[i] - quiet_a[i - 1]),quiet_a[i - 1],quiet_a[i],algo_quiet_lev);
-                    return false;
+            if(quiet_a_num == A_BUF_MAX){
+                for (int i = 1; i < A_BUF_MAX; i++) {
+                    if(fabs(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
+                        CWM_OS_dbgPrintf("[algo]algo_quiet_process num:%d,%4f,%4f,%4f,%4f\n",i,quiet_a[i],quiet_a[i - 1],fabs(quiet_a[i] - quiet_a[i - 1]),algo_quiet_lev);
+                        
+                        CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========faild===========\n");
+                        memset(quiet_a,0,sizeof(quiet_a));
+                        quiet_a_num = 0;
+                        return false;
+                    }
                 }
+                CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========success===========\n");
+                return true;
             }
-            CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========quiet===========\n");
-            return true;
         }
     }
+
     return false;
 }
 
