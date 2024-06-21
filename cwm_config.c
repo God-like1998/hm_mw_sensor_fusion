@@ -270,7 +270,7 @@ static bool algo_quiet_process(uint8_t type, float *f)
             float az = f[2];
 
             quiet_a[quiet_a_num] = sqrt(ax*ax + ay*ay + az*az);
-            CWM_OS_dbgPrintf("[algo]algo_quiet_process quiet_a[%d] = %f\n",quiet_a_num,quiet_a[quiet_a_num]);
+            // CWM_OS_dbgPrintf("[algo]algo_quiet_process quiet_a[%d] = %f\n",quiet_a_num,quiet_a[quiet_a_num]);
             quiet_a_num++;
 
             if(quiet_a_num == A_BUF_MAX){

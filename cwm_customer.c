@@ -331,7 +331,7 @@ const int dml_hs_intf_config[16] = {1,0,3,11,7};                                
 const int dml_ag_pref_config_default[16] = {1,0,0,150,120,100};
 const int dml_ag_pref_config_standby[16] = {1,0,0,100};
 const float algo_quiet_lev = 0.30f;
-const uint32_t algo_quiet_timeout_min = 60*1;
+const uint32_t algo_quiet_timeout_min = 60*10;
 
 /****************************************************flash 读写需要实现的接口************************************************/
 void diskio_read_flash_cali(uint8_t* data,uint32_t len)
