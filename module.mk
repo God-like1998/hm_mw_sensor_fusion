@@ -3,7 +3,7 @@
 HM_MW_SENSOR_FUSION_SRC = project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion
 
 C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_algo_task.c
-C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_diskio.c
+C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_customer.c
 
 C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_common.c
 C_FILES += $(HM_MW_SENSOR_FUSION_SRC)/cwm_config.c

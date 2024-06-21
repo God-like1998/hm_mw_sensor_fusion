@@ -4,7 +4,7 @@
 #include "stdio.h"
 
 #include "cwm_lib.h"
-#include "cwm_diskio.h"
+#include "cwm_customer.h"
 #include "cwm_config.h"
 #include "cwm_port.h"
 

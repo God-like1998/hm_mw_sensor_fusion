@@ -5,7 +5,7 @@
 #include "cwm_lib_dml.h"
 #include "cwm_config.h"
 #include "cwm_port.h"
-#include "cwm_diskio.h"
+#include "cwm_customer.h"
 #include "cwm_test.h"
 
 #if defined(ALGO_TEST_EN) && (1 == ALGO_TEST_EN)

@@ -1,5 +1,5 @@
-#ifndef __CWM_DISKIO_H__
-#define __CWM_DISKIO_H__
+#ifndef __CWM_CUSTOMER_H__
+#define __CWM_CUSTOMER_H__
 
 #ifdef __cplusplus
 extern "C"{

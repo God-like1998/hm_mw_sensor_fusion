@@ -5,7 +5,7 @@
 #include "cwm_lib.h"
 #include "cwm_lib_dml.h"
 #include "cwm_config.h"
-#include "cwm_diskio.h"
+#include "cwm_customer.h"
 #include "cwm_port.h"
 
 /*版本号说明：SDK_EAR0.1.2.3
@@ -274,13 +274,13 @@ static bool algo_quiet_process(uint8_t type, float *f)
             quiet_a_num++;
 
             if(quiet_a_num == A_BUF_MAX){
+                quiet_a_num = 0;
                 for (int i = 1; i < A_BUF_MAX; i++) {
                     if(fabs(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
                         CWM_OS_dbgPrintf("[algo]algo_quiet_process num:%d,%4f,%4f,%4f,%4f\n",i,quiet_a[i],quiet_a[i - 1],fabs(quiet_a[i] - quiet_a[i - 1]),algo_quiet_lev);
                         
                         CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========faild===========\n");
                         memset(quiet_a,0,sizeof(quiet_a));
-                        quiet_a_num = 0;
                         return false;
                     }
                 }
