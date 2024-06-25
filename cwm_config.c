@@ -735,10 +735,6 @@ static void dml_algo_init(void)
     memcpy(&scl,dml_hw_config,sizeof(scl));
     CWM_SettingControl(SCL_DML_DRV_HW_CONFIG, &scl);
 
-    memcpy(&scl,dml_ag_config,sizeof(scl));
-	CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
-    algo_set_odr(scl.iData[8]);
-
     // memcpy(&scl,dml_mag_config,sizeof(scl));
 	// CWM_SettingControl(SCL_DML_DRV_M_CONFIG, &scl);
 
@@ -757,6 +753,10 @@ static void dml_algo_init(void)
     for (i = 0; i < scl.iData[2]; i ++) {
         CWM_OS_dbgPrintf("[algo] DML device = [%d]: hw_id=%d hw_attr=%d\n", i, scl.iData[6 + i * 2], scl.iData[7 + i * 2]);
     }
+
+    memcpy(&scl,dml_ag_config,sizeof(scl));
+	CWM_SettingControl(SCL_DML_DRV_AG_CONFIG, &scl);
+    algo_set_odr(scl.iData[8]);
 
     /*开机 sensor 默认关闭*/
     memset(&scl, 0, sizeof(scl));
