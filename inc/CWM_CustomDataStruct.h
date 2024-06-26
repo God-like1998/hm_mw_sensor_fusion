@@ -4,7 +4,7 @@
 typedef struct CustomSensorData {
     uint32_t sensorType;
     float fData[16];
-    double dData[10];
+    double dData[12];
 } CustomSensorData;
 
 #endif /* __CWM_CUSTOMDATASTRUCT_H__ */

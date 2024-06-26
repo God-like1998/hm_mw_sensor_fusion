@@ -15,9 +15,8 @@ CFLAGS += -I$(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middlewa
 CFLAGS += -I$(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion
 
 
-# LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/lib/CWM_LIB_DML_gcc_m4.a
+
 LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/lib/CWM_LIB_DML_gcc_m33.a
-# LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/lib/CWM_LIB_gcc_m4.a
 LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/lib/CWM_LIB_gcc_m33.a
 # LIBS += $(SOURCE_DIR)/project/ab15xx/apps/headset_ref_design/harman/middleware/hm_mw_sensor_fusion/cwm_app.a
 

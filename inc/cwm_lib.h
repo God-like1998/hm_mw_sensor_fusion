@@ -38,7 +38,6 @@
 #define SCL_SS_CONFIG           29
 #define SCL_ACT_INFO_CONFIG     30
 #define SCL_REQ_ACTIVITY_EXIT   31
-#define SCL_TAP_CONFIG          32
 #define SCL_ACT_PAI_INFO        33
 #define SCL_HAND_WRIST_CONFIG   34
 #define SCL_ACT_INTSY_INFO      35
@@ -58,6 +57,8 @@
 #define SCL_FITNESS_INFO        49
 #define SCL_SZ_BREACH_CONFIG    50
 #define SCL_ACT_PAI_INFO2       51
+#define SCL_AIC_CONFIG          52
+#define SCL_AIC_INFO            53
 
 #define SCL_ALGO_PROC_CONFIG    100
 #define SCL_INPUT_SENSOR_CONFIG 101
@@ -92,6 +93,7 @@
 #define SCL_HS_GESTURE_CONFIG   309
 #define SCL_HS_NECK_HT_CONFIG   310
 #define SCL_HS_ORIEN_CTRL_SYNC  311
+#define SCL_HS_TAP_CONFIG       312
 
 #define SCL_FUSION_MOUSE_CONFIG 501
 #define SCL_PEDO_POD_CONFIG     502
@@ -102,6 +104,7 @@
 #define SCL_GLASSES_MOT_LEVEL   511
 #define SCL_GLASSES_MOT_CALI_CTRL   512
 #define SCL_GLASSES_MOT_CMD     513
+#define SCL_NB_AR_CONFIG        520
 
 /**
   * @brief Custom Sensor Input sensorId
