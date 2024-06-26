@@ -395,9 +395,13 @@ uint8_t nums：
 */
 void customio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
-    // CWM_OS_dbgPrintf("[customio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
-    //         f[0],f[1],f[2],
-    //         f[3],f[4],f[5]);
+    // CWM_OS_dbgPrintf("[customio]read acc-gyro*1000: %d,%d,%d   ,%d,%d,%d\n",
+    //         (int32_t)(f[0]*1000),
+    //         (int32_t)(f[1]*1000),
+    //         (int32_t)(f[2]*1000),
+    //         (int32_t)(f[3]*1000),
+    //         (int32_t)(f[4]*1000),
+    //         (int32_t)(f[5]*1000));
 }
 /*算法输出欧拉角和四元素数据：在算法设置中调用，
 float *f:
@@ -413,9 +417,14 @@ float *f:
 */
 void customio_read_eul_qua(float *f)
 {
-    CWM_OS_dbgPrintf("[customio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
-            f[0],f[1],f[2],
-            f[3],f[4],f[5],f[6]);
+    CWM_OS_dbgPrintf("[customio]read eul-qua*1000: yaw=%d, pitch=%d, roll=%d, x=%d, y=%d, z=%d, w=%d\n",
+            (int32_t)(f[0]*1000),
+            (int32_t)(f[1]*1000),
+            (int32_t)(f[2]*1000),
+            (int32_t)(f[3]*1000),
+            (int32_t)(f[4]*1000),
+            (int32_t)(f[5]*1000),
+            (int32_t)(f[6]*1000));
 }
 /*算法输出 ag 数据 1s 平均值，在算法设置中调用，
 float *f:
@@ -430,9 +439,13 @@ float *f:
 */
 void customio_read_ag_avg_value(float *f)
 {
-    CWM_OS_dbgPrintf("[customio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
-            f[0],f[1],f[2],
-            f[3],f[4],f[5]);
+    CWM_OS_dbgPrintf("[customio]ag avg*1000:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
+            (int32_t)(f[0]*1000),
+            (int32_t)(f[1]*1000),
+            (int32_t)(f[2]*1000),
+            (int32_t)(f[3]*1000),
+            (int32_t)(f[4]*1000),
+            (int32_t)(f[5]*1000));
 }
 /*算法输出 spv 校正结果，在算法设置中调用，
 校正结果枚举：
@@ -447,7 +460,7 @@ sixf：六面校正结果。
 */
 void customio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
 {
-    CWM_OS_dbgPrintf("[customio]customio_notify_spv_cali_result : whl=%d pcba=%d sixf=%d  [2==success / 0==fail]\n",
+    CWM_OS_dbgPrintf("[customio]customio_notify_spv_cali_result:whl=%d, pcba=%d, sixf=%d [2==success / 0==fail]\n",
         whl,
         pcba,
         sixf); 
@@ -468,7 +481,7 @@ status：当前校正步骤结果：
 */
 void customio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
 {
-    CWM_OS_dbgPrintf("[customio]customio_notify_ori_eul_cali_result: runing steps=%d status=%d  [2==success / 0==fail]\n",
+    CWM_OS_dbgPrintf("[customio]customio_notify_ori_eul_cali_result:running steps=%d, state=%d [2==success / 0==fail] \n",
         steps,
         status);
 }

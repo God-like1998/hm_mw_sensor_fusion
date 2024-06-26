@@ -25,6 +25,8 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 #define SENSOR_DEFAULT  0
 #define SENSOR_STANDBY  1
 
+#define FABS(x) (((x) >= 0.f)?(x):(-x))
+
 enum{
     E_STATE_LEV0,
     E_STATE_LEV1,
@@ -296,15 +298,20 @@ static bool algo_quiet_process(uint8_t type, float *f)
             float ay = f[1];
             float az = f[2];
 
-            quiet_a[quiet_a_num] = sqrt(ax*ax + ay*ay + az*az);
-            // CWM_OS_dbgPrintf("[algo]algo_quiet_process quiet_a[%d] = %f\n",quiet_a_num,quiet_a[quiet_a_num]);
+            quiet_a[quiet_a_num] = (float)sqrt(ax*ax + ay*ay + az*az);
+            //CWM_OS_dbgPrintf("[algo]algo_quiet_process quiet_a*1000[%d] = %d\n",quiet_a_num,(int32_t)(quiet_a[quiet_a_num]*1000));
             quiet_a_num++;
 
             if(quiet_a_num == A_BUF_MAX){
                 quiet_a_num = 0;
                 for (int i = 1; i < A_BUF_MAX; i++) {
-                    if(fabs(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
-                        CWM_OS_dbgPrintf("[algo]algo_quiet_process num:%d,%4f,%4f,%4f,%4f\n",i,quiet_a[i],quiet_a[i - 1],fabs(quiet_a[i] - quiet_a[i - 1]),algo_quiet_lev);
+                    if(FABS(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
+                        CWM_OS_dbgPrintf("[algo]algo_quiet_process num:%d,value*1000:%d,%d,%d,%d\n",
+                            i,
+                            (int32_t)(quiet_a[i]*1000),
+                            (int32_t)(quiet_a[i - 1]*1000),
+                            (int32_t)(FABS(quiet_a[i] - quiet_a[i - 1])*1000),
+                            (int32_t)(algo_quiet_lev*1000));
                         
                         CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========faild===========\n");
                         memset(quiet_a,0,sizeof(quiet_a));
@@ -522,13 +529,15 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
         break;
         case 100:
             algo_res_write(f);
-            // CWM_OS_dbgPrintf("[algo][100]: %f,%f,%f\n",
-            //     f[0],
-            //     f[1],
-            //     f[2]);
+            // CWM_OS_dbgPrintf("[algo][100]*1000: %d,%d,%d\n",
+            //     (int32_t)(f[0]*1000),
+            //     (int32_t)(f[1]*1000),
+            //     (int32_t)(f[2]*1000));
         break;
         case 112:
-            CWM_OS_dbgPrintf("[algo][112] :%f,%f\n",f[2],f[6]);
+            CWM_OS_dbgPrintf("[algo][112]*1000 :%d,%d\n",
+                (int32_t)(f[2]*1000),
+                (int32_t)(f[6]*1000));
             /*
             step1 success:[2],[6] = 2,1
             step2 success:[2],[6] = 1,1
@@ -574,8 +583,8 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
             }
         break;
         case 21:
-            CWM_OS_dbgPrintf("[algo][21]: gyro auro cali: %f\n",
-                f[2]);
+            CWM_OS_dbgPrintf("[algo][21]*1000: gyro auro cali: %d\n",
+                (int32_t)(f[2]*1000));
         break;
         default:
             break;
@@ -680,9 +689,9 @@ static void hs_algo_init(void)
         /*设置 初始角度信息*/
         memset(&scl, 0, sizeof(scl));
         scl.iData[0] = 1;
-        scl.iData[2] = algo_dev_info.original_eul.yaw;
-        scl.iData[3] = algo_dev_info.original_eul.pitch;
-        scl.iData[4] = algo_dev_info.original_eul.roll;
+        scl.iData[2] = (int32_t)algo_dev_info.original_eul.yaw;
+        scl.iData[3] = (int32_t)algo_dev_info.original_eul.pitch;
+        scl.iData[4] = (int32_t)algo_dev_info.original_eul.roll;
         CWM_SettingControl(SCL_HS_INTF_CONFIG, &scl);
         CWM_OS_dbgPrintf("[algo]set ori eul:y=%d,p=%d,r=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
     }else{
@@ -1078,7 +1087,7 @@ static void algo_spv_sfa_cali_close(void* param)
 static void algo_orig_eul_cali_open(void* param)
 {
     if(NULL == param)   return;
-    CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_open\n", *((uint32_t*)param));
+    CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_open %d\n", *((uint32_t*)param));
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1314,17 +1323,18 @@ void algo_data_handle(void)
 
         /*此处添加客户接口：将 ag 平均值传给客户*/
         customio_read_ag_avg_value((float *)&algo_dev_info.ag_avg_value_1s.ag);
-        CWM_OS_dbgPrintf("[algo]ag avg:%d,%d,ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
+        CWM_OS_dbgPrintf("[algo]ag avg:%d,%d,value*1000:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
             algo_dev_info.ag_avg_value_1s.a_cnts,
             algo_dev_info.ag_avg_value_1s.g_cnts,
-            algo_dev_info.ag_avg_value_1s.ag.ax,
-            algo_dev_info.ag_avg_value_1s.ag.ay,
-            algo_dev_info.ag_avg_value_1s.ag.az,
-            algo_dev_info.ag_avg_value_1s.ag.gx,
-            algo_dev_info.ag_avg_value_1s.ag.gy,
-            algo_dev_info.ag_avg_value_1s.ag.gz);
+            (int32_t)(algo_dev_info.ag_avg_value_1s.ag.ax*1000),
+            (int32_t)(algo_dev_info.ag_avg_value_1s.ag.ay*1000),
+            (int32_t)(algo_dev_info.ag_avg_value_1s.ag.az*1000),
+            (int32_t)(algo_dev_info.ag_avg_value_1s.ag.gx*1000),
+            (int32_t)(algo_dev_info.ag_avg_value_1s.ag.gy*1000),
+            (int32_t)(algo_dev_info.ag_avg_value_1s.ag.gz*1000));
     }    
 }
+
 
 void algo_spv_cali_disable_mode(void)
 {
