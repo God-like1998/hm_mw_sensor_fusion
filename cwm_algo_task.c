@@ -7,7 +7,7 @@
 #include "cwm_lib.h"
 #include "cwm_lib_dml.h"
 #include "cwm_config.h"
-#include "cwm_customer.h"
+#include "cwm_customio.h"
 #include "cwm_common.h"
 #include "cwm_port.h"
 #include "cwm_test.h"
@@ -134,7 +134,7 @@ void cwm_algo_task(void *pvParameters){
     algo_message_init();
 
     /*不同平台之间有差异，在这里提供差异化的初始化接口*/
-    diskio_init();
+    customio_init();
 
     algo_init();
 

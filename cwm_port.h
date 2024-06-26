@@ -8,9 +8,9 @@ extern "C"{
 #include "stdint.h"
 
 enum{
-    E_CALI_FAIL,// ß∞‹
-    E_CALI_RUNNING,//÷¥––÷–
-    E_CALI_SUCCESS,//≥…π¶
+    E_CALI_FAIL,//Â§±Ë¥•
+    E_CALI_RUNNING,//ÊâßË°å‰∏≠
+    E_CALI_SUCCESS,//ÊàêÂäü
 };
 enum{
     E_CALI_SPV_WHOLE = 1,
@@ -18,34 +18,34 @@ enum{
     E_CALI_SIX_FACE = 5,
 };
 enum{
-    E_ORI_EUL_CALI_FAIL,// ß∞‹
-    E_ORI_EUL_CALI_RUNNING,//÷¥––÷–
-    E_ORI_EUL_CALI_SUCCESS,//≥…π¶
+    E_ORI_EUL_CALI_FAIL,//Â§±Ë¥•
+    E_ORI_EUL_CALI_RUNNING,//ÊâßË°å‰∏≠
+    E_ORI_EUL_CALI_SUCCESS,//ÊàêÂäü
 };
 enum{
-    E_ANGLE_INIT_STEP1 = 1,//µ⁄“ª≤Ω
-    E_ANGLE_INIT_STEP2 = 2,//µ⁄∂˛≤Ω
-    E_ANGLE_INIT_STEP3 = 3,//µ⁄»˝≤Ω
+    E_ANGLE_INIT_STEP1 = 1,//Á¨¨‰∏ÄÊ≠•
+    E_ANGLE_INIT_STEP2 = 2,//Á¨¨‰∫åÊ≠•
+    E_ANGLE_INIT_STEP3 = 3,//Á¨¨‰∏âÊ≠•
 };
 
 
 struct acc_t{
-    float ax;//µ•Œª£∫m/s^2
-    float ay;//µ•Œª£∫m/s^2
-    float az;//µ•Œª£∫m/s^2
+    float ax;//Âçï‰ΩçÔºöm/s^2
+    float ay;//Âçï‰ΩçÔºöm/s^2
+    float az;//Âçï‰ΩçÔºöm/s^2
 };
 struct gyro_t{
-    float gx;//µ•Œª£∫rad/s
-    float gy;//µ•Œª£∫rad/s
-    float gz;//µ•Œª£∫rad/s
+    float gx;//Âçï‰ΩçÔºörad/s
+    float gy;//Âçï‰ΩçÔºörad/s
+    float gz;//Âçï‰ΩçÔºörad/s
 };
 struct ag_t{
-    float ax;//µ•Œª£∫m/s^2
-    float ay;//µ•Œª£∫m/s^2
-    float az;//µ•Œª£∫m/s^2
-    float gx;//µ•Œª£∫rad/s
-    float gy;//µ•Œª£∫rad/s
-    float gz;//µ•Œª£∫rad/s
+    float ax;//Âçï‰ΩçÔºöm/s^2
+    float ay;//Âçï‰ΩçÔºöm/s^2
+    float az;//Âçï‰ΩçÔºöm/s^2
+    float gx;//Âçï‰ΩçÔºörad/s
+    float gy;//Âçï‰ΩçÔºörad/s
+    float gz;//Âçï‰ΩçÔºörad/s
 };
 struct eul_qua_t{
     float yaw;  //(degrees)

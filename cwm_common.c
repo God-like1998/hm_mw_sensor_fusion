@@ -3,7 +3,7 @@
 #include "stdbool.h"
 #include  "cwm_common.h"
 #include  "cwm_config.h"
-#include "cwm_customer.h"
+#include "cwm_customio.h"
 /**************************************************algo queue**************************************************/
 #define QUEUE_MAX_BUF_SIZE (256)/*必须是 2 的整数倍*/
 struct queue_t{

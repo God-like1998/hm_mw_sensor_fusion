@@ -4,7 +4,7 @@
 #include "stdio.h"
 
 #include "cwm_lib.h"
-#include "cwm_customer.h"
+#include "cwm_customio.h"
 #include "cwm_config.h"
 #include "cwm_port.h"
 
@@ -311,7 +311,7 @@ int OS_algo_printstr(const char * format)
 }
 
 
-os_api diskio_os_api = {
+os_api customio_os_api = {
     .dbgOutput = OS_algo_printstr,
     .GetTimeNs = OS_algo_get_time_ns,
     .uSleep = OS_algo_usleep,
@@ -330,32 +330,34 @@ const int dml_hs_orien_config[16] = {1,15000,0,15,8,2,1,0,0,0,0,1,0,2};
 const int dml_hs_intf_config[16] = {1,0,3,11,7};                                            /*M3 {1,0,3,11,7}*/
 const int dml_ag_pref_config_default[16] = {1,0,0,150,120,100};
 const int dml_ag_pref_config_standby[16] = {1,0,0,100};
+const int dml_log_config[16] = {1,0,0,1+2+4+8,64+5,3,-1-1-2-4-8-16-32,-1};
+const int dml_log_debug_config[16] = {1,1+2+4+8+16};
 const float algo_quiet_lev = 0.15f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 
 /****************************************************flash 读写需要实现的接口************************************************/
-void diskio_read_flash_cali(uint8_t* data,uint32_t len)
+void customio_read_flash_cali(uint8_t* data,uint32_t len)
 {
     uint8_t* addr = data;
     nvkey_status_t state = nvkey_read_data(NVID_CWM_SPV_CALIB_PARAMETERS,addr,&len);
     CWM_OS_dbgPrintf("[algo] read spv calib value from flash state %d ",state);
 }
 
-void diskio_save_flash_cali(uint8_t* data,uint32_t len)
+void customio_save_flash_cali(uint8_t* data,uint32_t len)
 {
     const uint8_t* addr = (const uint8_t*)data;
     nvkey_status_t status = nvkey_write_data(NVID_CWM_SPV_CALIB_PARAMETERS,addr,len);
     CWM_OS_dbgPrintf("[algo] save spv calib value to flash  state: %d",status);
 }
 
-void diskio_read_flash_eul(uint8_t* data,uint32_t len)
+void customio_read_flash_eul(uint8_t* data,uint32_t len)
 {
    uint8_t* addr = data;
    nvkey_status_t state = nvkey_read_data(NVID_CWM_ANGLE_INIT_PARAMETERS,addr,&len);
    CWM_OS_dbgPrintf("[algo] read angle init value from flash state %d ",state);
 }
 
-void diskio_save_flash_eul(uint8_t* data,uint32_t len)
+void customio_save_flash_eul(uint8_t* data,uint32_t len)
 {
     const uint8_t* addr = (const uint8_t*)data;
     nvkey_status_t status = nvkey_write_data(NVID_CWM_ANGLE_INIT_PARAMETERS,addr,len);
@@ -364,7 +366,7 @@ void diskio_save_flash_eul(uint8_t* data,uint32_t len)
 
 
 /****************************************************客户接口：实现数据传输************************************************/
-void diskio_init(void)
+void customio_init(void)
 {
     //IIC 硬件初始化
     OS_algo_i2c_init();
@@ -391,9 +393,9 @@ uint8_t idx:
 uint8_t nums：
      ag 数据总包数
 */
-void diskio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
+void customio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
-    // CWM_OS_dbgPrintf("[diskio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
+    // CWM_OS_dbgPrintf("[customio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
     //         f[0],f[1],f[2],
     //         f[3],f[4],f[5]);
 }
@@ -409,9 +411,9 @@ float *f:
         float w;    //quaternion_w
     };
 */
-void diskio_read_eul_qua(float *f)
+void customio_read_eul_qua(float *f)
 {
-    CWM_OS_dbgPrintf("[diskio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
+    CWM_OS_dbgPrintf("[customio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5],f[6]);
 }
@@ -426,9 +428,9 @@ float *f:
         float gz;//单位：rad/s
     };
 */
-void diskio_read_ag_avg_value(float *f)
+void customio_read_ag_avg_value(float *f)
 {
-    CWM_OS_dbgPrintf("[diskio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
+    CWM_OS_dbgPrintf("[customio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5]);
 }
@@ -443,9 +445,9 @@ whl：整机校正结果。
 pcba：pcba 校正结果。
 sixf：六面校正结果。
 */
-void diskio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
+void customio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
 {
-    CWM_OS_dbgPrintf("[diskio]diskio_notify_spv_cali_result : whl=%d pcba=%d sixf=%d  [2==success / 0==fail]\n",
+    CWM_OS_dbgPrintf("[customio]customio_notify_spv_cali_result : whl=%d pcba=%d sixf=%d  [2==success / 0==fail]\n",
         whl,
         pcba,
         sixf); 
@@ -464,9 +466,9 @@ status：当前校正步骤结果：
         E_ORI_EUL_CALI_SUCCESS,//成功
     };
 */
-void diskio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
+void customio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
 {
-    CWM_OS_dbgPrintf("[diskio]diskio_notify_ori_eul_cali_result: runing steps=%d status=%d  [2==success / 0==fail]\n",
+    CWM_OS_dbgPrintf("[customio]customio_notify_ori_eul_cali_result: runing steps=%d status=%d  [2==success / 0==fail]\n",
         steps,
         status);
 }

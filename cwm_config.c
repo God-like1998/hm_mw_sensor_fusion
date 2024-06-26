@@ -5,7 +5,7 @@
 #include "cwm_lib.h"
 #include "cwm_lib_dml.h"
 #include "cwm_config.h"
-#include "cwm_customer.h"
+#include "cwm_customio.h"
 #include "cwm_port.h"
 
 /*版本号说明：SDK_EAR0.1.2.3
@@ -168,11 +168,38 @@ static void update_original_eul_checksum(void)
     algo_dev_info.original_eul.crc_16 = check_sum(addr,len);
 }
 
+static void save_cali_value(void)
+{
+    update_cali_value_checksum();
+    update_auto_cali_value_checksum();
+
+    /*此处添加客户接口：保存校正数据到 flash*/
+    customio_save_flash_cali((uint8_t*)&algo_dev_info.ag_cali_value,sizeof(struct ag_cali_back_t));
+
+    /*写完 flash 后，再读取保存的数据，确保写成功*/
+    struct ag_cali_back_t cali_value = {0};
+    customio_read_flash_cali((uint8_t*)&cali_value,sizeof(cali_value));
+
+    if(!memcmp(&algo_dev_info.ag_cali_value,&cali_value,sizeof(struct ag_cali_back_t))){
+        CWM_OS_dbgPrintf("[algo]flash write ag_cali_value succuss\n");
+    }else{
+        CWM_OS_dbgPrintf("[algo]flash write ag_cali_value fail\n");
+    }
+
+    CWM_OS_dbgPrintf("[algo]save :ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
+        cali_value.ax,
+        cali_value.ay,
+        cali_value.az,
+        cali_value.gx,
+        cali_value.gy,
+        cali_value.gz);
+}
+
 static void algo_read_param_from_flash(void)
 {
     //此处添加客户接口
     struct ag_cali_back_t cali_value = {0};
-    diskio_read_flash_cali((uint8_t*)&cali_value,sizeof(cali_value));
+    customio_read_flash_cali((uint8_t*)&cali_value,sizeof(cali_value));
 
     uint8_t* cali_addr = (uint8_t*)&cali_value;
     /*注意：当前校正数据中包含两个部分，一个是产测的校正数据，另一个是自动校正数据，
@@ -214,7 +241,7 @@ static void algo_read_param_from_flash(void)
 
     //此处添加客户接口
     struct original_eul_t ori_eul_value ={0};
-    diskio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
+    customio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
     
     uint8_t* ori_eul_addr = (uint8_t*)&ori_eul_value; 
 
@@ -342,7 +369,7 @@ static void algo_ag_read(void)
         }
 
         /*此处添加客户接口：将 acc、gyro 传给客户*/
-        diskio_read_ag(buf->data_type,f,i,buf->size);
+        customio_read_ag(buf->data_type,f,i,buf->size);
 
         if(buf->read >= ALGO_RES_MAX_COUNT){
             buf->read = 0;
@@ -373,7 +400,7 @@ static void algo_res_read(void)
         float* f = (float*)&buf->data[buf->read++];
 
         /*此处添加客户接口：将算法结果传给客户*/
-        diskio_read_eul_qua(f);
+        customio_read_eul_qua(f);
 
         if(buf->read >= ALGO_RES_MAX_COUNT){
             buf->read = 0;
@@ -665,13 +692,165 @@ static void hs_algo_init(void)
     }
 }
 
+static void algo_log_debug_ctl(uint32_t ctr)
+{
+    CWM_OS_dbgPrintf("[algo] algo_log_debug_ctl ctr = %d\n",ctr);
+    SettingControl_t scl;
+    if (ctr)
+    {
+        memset(&scl, 0, sizeof(scl));
+        memcpy(&scl,dml_log_config,sizeof(scl));
+        CWM_SettingControl(SCL_LOG, &scl);
+
+        memset(&scl, 0, sizeof(scl));
+        memcpy(&scl,dml_log_debug_config,sizeof(scl));
+        CWM_SettingControl(SCL_DML_DEBUG, &scl);
+    }
+    else
+    {
+        memset(&scl, 0, sizeof(scl));
+        scl.iData[0] = 1;
+        CWM_SettingControl(SCL_LOG, &scl);
+
+        memset(&scl, 0, sizeof(scl));
+        scl.iData[0] = 1;
+        CWM_SettingControl(SCL_DML_DEBUG, &scl);
+    }
+    
+}
+
+static void algo_spv_cali_en(uint32_t mode)
+{
+    CWM_OS_dbgPrintf("[algo] algo_spv_cali_en mode:%d\n",mode);
+    switch(mode){
+        case E_CALI_SPV_WHOLE:
+            algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_RUNNING;
+        break;
+        case E_CALI_SPV_PCBA:
+            algo_dev_info.ag_cali_value.spv_pcba_status = E_CALI_RUNNING;
+        break;
+        case E_CALI_SIX_FACE:
+            algo_dev_info.ag_cali_value.sixface_status = E_CALI_RUNNING;
+        break;
+        default :
+        return;
+    }
+	CWM_Sensor_Disable(IDX_ALGO_SPV);
+
+    // 强制关闭校正
+    SettingControl_t scl;
+    memset(&scl, 0, sizeof(scl));
+    scl.iData[0] = 1;
+    scl.iData[3] = -1;
+    CWM_SettingControl(SCL_SENS_CALI_CONFIG, &scl);
+
+    memset(&scl, 0, sizeof(scl));
+    scl.iData[0] = 1;
+    scl.iData[1] = 5; // z pluse point to sky
+    scl.iData[2] = 5; // time-out period
+    scl.iData[3] = defautl_odr;       // odr
+    scl.iData[4] = 28400000; // gyro_Lsb_Dps
+    scl.iData[5] = 3000;     // acc_noise
+    scl.iData[6] = 120000;  // gyro_noise
+    scl.iData[7] = 50000;   // acc_bias
+    scl.iData[8] = 3300000; // gyro_bias
+    CWM_SettingControl(SCL_SPV_CONFIG, &scl);
+
+    // [1] = 1 整机校正， [1] = 2 PCBA校正，[1] = 5 六面校正
+    memset(&scl, 0, sizeof(scl));
+    scl.iData[0] = 1;
+    scl.iData[1] = mode;
+    CWM_SettingControl(SCL_SPV_MODE, &scl);
+
+    CWM_Sensor_Enable(IDX_ALGO_SPV);
+}
+
+static void algo_original_eul_cali_en(uint32_t steps)
+{
+
+    CWM_OS_dbgPrintf("[algo] algo_original_eul_cali_en steps = %d\n",steps);
+    SettingControl_t scl;
+    switch(steps){    
+        case E_ANGLE_INIT_STEP1:
+            algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_FAIL;
+            algo_dev_info.original_eul.step2_status = E_ORI_EUL_CALI_FAIL;
+            algo_dev_info.original_eul.step3_status = E_ORI_EUL_CALI_FAIL;
+            CWM_Sensor_Enable(112);
+
+            memset(&scl, 0, sizeof(scl));
+            scl.iData[0] = 1;
+            scl.iData[1] = 2;
+            scl.iData[2] = E_ANGLE_INIT_STEP1;
+            CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
+
+            algo_dev_info.original_eul.running_steps = E_ANGLE_INIT_STEP1;
+            algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_RUNNING;
+        break;
+
+        case E_ANGLE_INIT_STEP2:
+            memset(&scl, 0, sizeof(scl));
+            scl.iData[0] = 1;
+            scl.iData[1] = 2;
+            scl.iData[2] = E_ANGLE_INIT_STEP2;
+            CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
+
+            algo_dev_info.original_eul.running_steps = E_ANGLE_INIT_STEP2;
+            algo_dev_info.original_eul.step2_status = E_ORI_EUL_CALI_RUNNING;
+        break;
+
+        case E_ANGLE_INIT_STEP3:
+            memset(&scl, 0, sizeof(scl));
+            scl.iData[0] = 1;
+            scl.iData[1] = 2;
+            scl.iData[2] = E_ANGLE_INIT_STEP3;
+            CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
+
+            algo_dev_info.original_eul.running_steps = E_ANGLE_INIT_STEP3;
+            algo_dev_info.original_eul.step3_status = E_ORI_EUL_CALI_RUNNING;
+        break;
+
+        default:
+        break;
+    }
+    
+}
+
+static void algo_avg_ag_value_en(void)
+{
+    CWM_OS_dbgPrintf("[algo] algo_avg_ag_value_en\n");
+
+    algo_dev_info.en_ag_avg_value_1s = 1;
+    memset(&algo_dev_info.ag_avg_value_1s,0,sizeof(struct ag_avg_t));
+    CWM_Sensor_Enable(IDX_ACCEL);
+    CWM_Sensor_Enable(IDX_GYRO);
+}
+
+static void algo_save_before_poweroff(void)
+{
+    SettingControl_t scl;
+    memset(&scl, 0, sizeof(scl));
+    scl.iData[0] = 1;
+    scl.iData[1] = 1;
+    CWM_SettingControl(SCL_SENS_CALI_CTRL_A, &scl);
+
+    algo_dev_info.ag_cali_value.auto_valid = 1;
+    algo_dev_info.ag_cali_value.auto_gx = scl.iData[5];
+    algo_dev_info.ag_cali_value.auto_gy = scl.iData[6];
+    algo_dev_info.ag_cali_value.auto_gz = scl.iData[7];
+
+    CWM_OS_dbgPrintf("[algo]auto_calib_value befor poweroff:au_gx = %d,au_gy = %d,au_gz = %d\n",algo_dev_info.ag_cali_value.auto_gx,
+                      algo_dev_info.ag_cali_value.auto_gy,algo_dev_info.ag_cali_value.auto_gz);
+    
+    save_cali_value();
+}
+
 static void dml_algo_init(void)
 {
     int i = 0;
     SettingControl_t scl;
     
     /* -----------------algo_dml_init------------------------ */
-    CWM_LibPreInit(&diskio_os_api);
+    CWM_LibPreInit(&customio_os_api);
 
     /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
     memcpy(&scl,dml_vendor_config,sizeof(scl));
@@ -717,13 +896,7 @@ static void dml_algo_init(void)
 	CWM_SettingControl(SCL_INPUT_DT_CONFIG, &scl);
     
     memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    scl.iData[3] = 1 + 2 + 4 + 8;
-    scl.iData[4] = 64 + 5;
-    scl.iData[5] = 3;
-    // scl.iData[5] = 3+16;
-    scl.iData[6] = -1 - 1 - 2 - 4 - 8 - 16 - 32; //- 8192
-    scl.iData[7] = -1; 
+    memcpy(&scl,dml_log_config,sizeof(scl));
     CWM_SettingControl(SCL_LOG, &scl);
 
     /* ---------dml_config---------------------- */
@@ -1069,32 +1242,6 @@ void algo_set_odr(uint16_t odr)
         algo_dev_info.odr = STANDBY_ODR;
 }
 
-static void save_cali_value(void)
-{
-    update_cali_value_checksum();
-    update_auto_cali_value_checksum();
-
-    /*此处添加客户接口：保存校正数据到 flash*/
-    diskio_save_flash_cali((uint8_t*)&algo_dev_info.ag_cali_value,sizeof(struct ag_cali_back_t));
-
-    /*写完 flash 后，再读取保存的数据，确保写成功*/
-    struct ag_cali_back_t cali_value = {0};
-    diskio_read_flash_cali((uint8_t*)&cali_value,sizeof(cali_value));
-
-    if(!memcmp(&algo_dev_info.ag_cali_value,&cali_value,sizeof(struct ag_cali_back_t))){
-        CWM_OS_dbgPrintf("[algo]flash write ag_cali_value succuss\n");
-    }else{
-        CWM_OS_dbgPrintf("[algo]flash write ag_cali_value fail\n");
-    }
-
-    CWM_OS_dbgPrintf("[algo]save :ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
-        cali_value.ax,
-        cali_value.ay,
-        cali_value.az,
-        cali_value.gx,
-        cali_value.gy,
-        cali_value.gz);
-}
 void algo_data_handle(void)
 {
     algo_quiet_check_time();
@@ -1113,7 +1260,7 @@ void algo_data_handle(void)
         uint16_t whl = algo_dev_info.ag_cali_value.spv_whole_status;
         uint16_t pcba = algo_dev_info.ag_cali_value.spv_pcba_status;
         uint16_t sixf = algo_dev_info.ag_cali_value.sixface_status;
-        diskio_notify_spv_cali_result(whl,pcba,sixf);
+        customio_notify_spv_cali_result(whl,pcba,sixf);
     }else if((algo_dev_info.event_cali_finish) && (E_STATE_STANDBY_SPV == algo_current->id)){
         algo_dev_info.event_cali_finish = 0;
     }
@@ -1129,7 +1276,7 @@ void algo_data_handle(void)
         if(1 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step1_status;
         else if(2 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step2_status;
         else if(3 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step3_status;
-        diskio_notify_ori_eul_cali_result(algo_dev_info.original_eul.running_steps,status);
+        customio_notify_ori_eul_cali_result(algo_dev_info.original_eul.running_steps,status);
         CWM_OS_dbgPrintf("[algo]orig eul cali:runing_step =%d, step1_status=%d, step2_status=%d, step3_status=%d,\n",
             algo_dev_info.original_eul.running_steps,
             algo_dev_info.original_eul.step1_status,
@@ -1144,11 +1291,11 @@ void algo_data_handle(void)
         (E_ORI_EUL_CALI_SUCCESS == algo_dev_info.original_eul.step1_status))){
             
             /*此处添加客户接口：保存原始角度数据到 flash*/
-            diskio_save_flash_eul((uint8_t*)&algo_dev_info.original_eul,sizeof(struct original_eul_t));
+            customio_save_flash_eul((uint8_t*)&algo_dev_info.original_eul,sizeof(struct original_eul_t));
 
             /*写完 flash 后，再读取保存的数据，确保写成功*/
             struct original_eul_t ori_eul_value = {0};
-            diskio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
+            customio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
             if(!memcmp(&algo_dev_info.original_eul,&ori_eul_value,sizeof(struct original_eul_t))){
                 CWM_OS_dbgPrintf("[algo]flash write original_eul succuss\n");
             }else{
@@ -1166,7 +1313,7 @@ void algo_data_handle(void)
         CWM_Sensor_Disable(IDX_GYRO);
 
         /*此处添加客户接口：将 ag 平均值传给客户*/
-        diskio_read_ag_avg_value((float *)&algo_dev_info.ag_avg_value_1s.ag);
+        customio_read_ag_avg_value((float *)&algo_dev_info.ag_avg_value_1s.ag);
         CWM_OS_dbgPrintf("[algo]ag avg:%d,%d,ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
             algo_dev_info.ag_avg_value_1s.a_cnts,
             algo_dev_info.ag_avg_value_1s.g_cnts,
@@ -1177,151 +1324,6 @@ void algo_data_handle(void)
             algo_dev_info.ag_avg_value_1s.ag.gy,
             algo_dev_info.ag_avg_value_1s.ag.gz);
     }    
-}
-
-void algo_log_debug_ctl(uint32_t ctr)
-{
-    CWM_OS_dbgPrintf("[algo] algo_log_debug_ctl ctr = %d\n",ctr);
-    SettingControl_t scl;
-    if (ctr)
-    {
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        scl.iData[3] = 1 + 2 + 4 + 8;
-        scl.iData[4] = 64 + 5;
-        scl.iData[5] = 3;
-        // scl.iData[5] = 3+16;
-        scl.iData[6] = -1 - 1 - 2 - 4 - 8 - 16 - 32; //- 8192
-        scl.iData[7] = -1; 
-        CWM_SettingControl(SCL_LOG, &scl);
-
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        scl.iData[1] = 1 + 2 + 4 + 8 + 16;
-        CWM_SettingControl(SCL_DML_DEBUG, &scl);
-    }
-    else
-    {
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        CWM_SettingControl(SCL_LOG, &scl);
-
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        CWM_SettingControl(SCL_DML_DEBUG, &scl);
-    }
-    
-}
-
-void algo_hs_algo_ctl(uint32_t ctr)
-{
-    CWM_OS_dbgPrintf("[algo] algo_hs_algo_ctl ctr = %d\n",ctr);
-    if(ctr){
-        //打开SENSOR驱动
-        algo_sensor_ctr(1);
-
-        //设置SPV校正数据和初始角度数据
-        hs_algo_init();
-
-        CWM_Sensor_Enable(100);
-    }
-    else{
-        CWM_Sensor_Disable(100);
-    }
-}
-
-void algo_sensor_ctr(uint32_t ctr)
-{
-    CWM_OS_dbgPrintf("[algo] algo_sensor_ctr ctr = %d\n",ctr);
-    SettingControl_t scl;
-    if (ctr) {
-       
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        scl.iData[1] = 1; // enable DT calib
-        CWM_SettingControl(SCL_INPUT_DT_CONFIG, &scl);
-
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        scl.iData[1] = 1;
-        scl.iData[2] = 3;
-        CWM_SettingControl(SCL_DML_DRV_ENABLE, &scl);
-
-        CWM_Sensor_Enable(IDX_ACCEL);
-        CWM_Sensor_Enable(IDX_GYRO);
-    } else {
-
-        memset(&scl, 0, sizeof(scl));
-        scl.iData[0] = 1;
-        scl.iData[1] = 1;
-        scl.iData[2] = 0;
-        CWM_SettingControl(SCL_DML_DRV_ENABLE, &scl);
-
-        //关闭所有用到的算法
-        CWM_Sensor_Disable(100);
-        CWM_Sensor_Disable(IDX_ACCEL);
-        CWM_Sensor_Disable(IDX_GYRO);
-
-    }
-
-}
-
-void algo_spv_cali_en(uint32_t mode)
-{
-    CWM_OS_dbgPrintf("[algo] algo_spv_cali_en mode:%d\n",mode);
-    switch(mode){
-        case E_CALI_SPV_WHOLE:
-            algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_RUNNING;
-        break;
-        case E_CALI_SPV_PCBA:
-            algo_dev_info.ag_cali_value.spv_pcba_status = E_CALI_RUNNING;
-        break;
-        case E_CALI_SIX_FACE:
-            algo_dev_info.ag_cali_value.sixface_status = E_CALI_RUNNING;
-        break;
-        default :
-        return;
-    }
-	CWM_Sensor_Disable(IDX_ALGO_SPV);
-
-    // 强制关闭校正
-    SettingControl_t scl;
-    memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    scl.iData[3] = -1;
-    CWM_SettingControl(SCL_SENS_CALI_CONFIG, &scl);
-
-    memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    scl.iData[1] = 5; // z pluse point to sky
-    scl.iData[2] = 5; // time-out period
-    scl.iData[3] = defautl_odr;       // odr
-    scl.iData[4] = 28400000; // gyro_Lsb_Dps
-    scl.iData[5] = 3000;     // acc_noise
-    scl.iData[6] = 120000;  // gyro_noise
-    scl.iData[7] = 50000;   // acc_bias
-    scl.iData[8] = 3300000; // gyro_bias
-    CWM_SettingControl(SCL_SPV_CONFIG, &scl);
-
-    // [1] = 1 整机校正， [1] = 2 PCBA校正，[1] = 5 六面校正
-    memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    scl.iData[1] = mode;
-    CWM_SettingControl(SCL_SPV_MODE, &scl);
-
-    CWM_Sensor_Enable(IDX_ALGO_SPV);
-}
-
-void algo_spv_cali_dis(void)
-{
-    CWM_OS_dbgPrintf("[algo]algo_spv_cali_dis\n");
-    //打开自动校正
-    SettingControl_t scl;
-    memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    CWM_SettingControl(SCL_SENS_CALI_CONFIG, &scl);
-
-    CWM_Sensor_Disable(IDX_ALGO_SPV);
 }
 
 void algo_spv_cali_disable_mode(void)
@@ -1337,87 +1339,3 @@ void algo_spv_cali_disable_mode(void)
     }
 }
 
-void algo_original_eul_cali_en(uint32_t steps)
-{
-
-    CWM_OS_dbgPrintf("[algo] algo_original_eul_cali_en steps = %d\n",steps);
-    SettingControl_t scl;
-    switch(steps){    
-        case E_ANGLE_INIT_STEP1:
-            algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_FAIL;
-            algo_dev_info.original_eul.step2_status = E_ORI_EUL_CALI_FAIL;
-            algo_dev_info.original_eul.step3_status = E_ORI_EUL_CALI_FAIL;
-            CWM_Sensor_Enable(112);
-
-            memset(&scl, 0, sizeof(scl));
-            scl.iData[0] = 1;
-            scl.iData[1] = 2;
-            scl.iData[2] = E_ANGLE_INIT_STEP1;
-            CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
-
-            algo_dev_info.original_eul.running_steps = E_ANGLE_INIT_STEP1;
-            algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_RUNNING;
-        break;
-
-        case E_ANGLE_INIT_STEP2:
-            memset(&scl, 0, sizeof(scl));
-            scl.iData[0] = 1;
-            scl.iData[1] = 2;
-            scl.iData[2] = E_ANGLE_INIT_STEP2;
-            CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
-
-            algo_dev_info.original_eul.running_steps = E_ANGLE_INIT_STEP2;
-            algo_dev_info.original_eul.step2_status = E_ORI_EUL_CALI_RUNNING;
-        break;
-
-        case E_ANGLE_INIT_STEP3:
-            memset(&scl, 0, sizeof(scl));
-            scl.iData[0] = 1;
-            scl.iData[1] = 2;
-            scl.iData[2] = E_ANGLE_INIT_STEP3;
-            CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
-
-            algo_dev_info.original_eul.running_steps = E_ANGLE_INIT_STEP3;
-            algo_dev_info.original_eul.step3_status = E_ORI_EUL_CALI_RUNNING;
-        break;
-
-        default:
-        break;
-    }
-    
-}
-
-void algo_original_eul_cali_dis(void)
-{
-    CWM_OS_dbgPrintf("[algo]algo_original_eul_cali_dis\n");
-    CWM_Sensor_Disable(112);
-}
-
-void algo_avg_ag_value_en(void)
-{
-    CWM_OS_dbgPrintf("[algo] algo_avg_ag_value_en\n");
-
-    algo_dev_info.en_ag_avg_value_1s = 1;
-    memset(&algo_dev_info.ag_avg_value_1s,0,sizeof(struct ag_avg_t));
-    CWM_Sensor_Enable(IDX_ACCEL);
-    CWM_Sensor_Enable(IDX_GYRO);
-}
-
-void algo_save_before_poweroff(void)
-{
-    SettingControl_t scl;
-    memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    scl.iData[1] = 1;
-    CWM_SettingControl(SCL_SENS_CALI_CTRL_A, &scl);
-
-    algo_dev_info.ag_cali_value.auto_valid = 1;
-    algo_dev_info.ag_cali_value.auto_gx = scl.iData[5];
-    algo_dev_info.ag_cali_value.auto_gy = scl.iData[6];
-    algo_dev_info.ag_cali_value.auto_gz = scl.iData[7];
-
-    CWM_OS_dbgPrintf("[algo]auto_calib_value befor poweroff:au_gx = %d,au_gy = %d,au_gz = %d\n",algo_dev_info.ag_cali_value.auto_gx,
-                      algo_dev_info.ag_cali_value.auto_gy,algo_dev_info.ag_cali_value.auto_gz);
-    
-    save_cali_value();
-}

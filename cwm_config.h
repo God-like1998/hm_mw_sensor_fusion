@@ -33,16 +33,7 @@ enum{
 void algo_init(void);
 uint16_t algo_get_odr(void);
 void algo_data_handle(void);
-void algo_log_debug_ctl(uint32_t ctr);
-void algo_hs_algo_ctl(uint32_t ctr);
-void algo_sensor_ctr(uint32_t ctr);
-void algo_spv_cali_en(uint32_t mode);
-void algo_spv_cali_dis(void);
 void algo_spv_cali_disable_mode(void);
-void algo_original_eul_cali_en(uint32_t steps);
-void algo_original_eul_cali_dis(void);
-void algo_avg_ag_value_en(void);
-void algo_save_before_poweroff(void);
 void algo_state_handle(uint16_t id, uint16_t event, void* param);
 
 
