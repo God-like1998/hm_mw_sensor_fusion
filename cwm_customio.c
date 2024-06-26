@@ -332,6 +332,7 @@ const int dml_ag_pref_config_default[16] = {1,0,0,150,120,100};
 const int dml_ag_pref_config_standby[16] = {1,0,0,100};
 const int dml_log_config[16] = {1,0,0,1+2+4+8,64+5,3,-1-1-2-4-8-16-32,-1};
 const int dml_log_debug_config[16] = {1,1+2+4+8+16};
+const int dml_hs_run_init_angle_config[16] = {1,2,0,15,3};
 const float algo_quiet_lev = 0.15f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 

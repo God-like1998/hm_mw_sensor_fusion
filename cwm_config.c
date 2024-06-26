@@ -693,11 +693,11 @@ static void hs_algo_init(void)
         scl.iData[3] = (int32_t)algo_dev_info.original_eul.pitch;
         scl.iData[4] = (int32_t)algo_dev_info.original_eul.roll;
         CWM_SettingControl(SCL_HS_INTF_CONFIG, &scl);
-        CWM_OS_dbgPrintf("[algo]set ori eul:y=%d,p=%d,r=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
+        CWM_OS_dbgPrintf("[algo]set ori eul:yaw=%d,pitch=%d,roll=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
     }else{
         memcpy(&scl,dml_hs_intf_config,sizeof(scl));
         CWM_SettingControl(SCL_HS_INTF_CONFIG, &scl);
-        CWM_OS_dbgPrintf("[algo]set ori eul default:y=%d,p=%d,r=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
+        CWM_OS_dbgPrintf("[algo]set ori eul default:yaw=%d,pitch=%d,roll=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
     }
 }
 
@@ -787,8 +787,7 @@ static void algo_original_eul_cali_en(uint32_t steps)
             CWM_Sensor_Enable(112);
 
             memset(&scl, 0, sizeof(scl));
-            scl.iData[0] = 1;
-            scl.iData[1] = 2;
+            memcpy(&scl,dml_hs_run_init_angle_config,sizeof(scl));
             scl.iData[2] = E_ANGLE_INIT_STEP1;
             CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
 
@@ -798,8 +797,7 @@ static void algo_original_eul_cali_en(uint32_t steps)
 
         case E_ANGLE_INIT_STEP2:
             memset(&scl, 0, sizeof(scl));
-            scl.iData[0] = 1;
-            scl.iData[1] = 2;
+            memcpy(&scl,dml_hs_run_init_angle_config,sizeof(scl));
             scl.iData[2] = E_ANGLE_INIT_STEP2;
             CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
 
@@ -809,8 +807,7 @@ static void algo_original_eul_cali_en(uint32_t steps)
 
         case E_ANGLE_INIT_STEP3:
             memset(&scl, 0, sizeof(scl));
-            scl.iData[0] = 1;
-            scl.iData[1] = 2;
+            memcpy(&scl,dml_hs_run_init_angle_config,sizeof(scl));
             scl.iData[2] = E_ANGLE_INIT_STEP3;
             CWM_SettingControl(SCL_HS_RUN_INIT_ANGLE, &scl);
 
@@ -1310,6 +1307,9 @@ void algo_data_handle(void)
             }else{
                 CWM_OS_dbgPrintf("[algo]flash write original_eul fail\n");
             }
+
+            CWM_OS_dbgPrintf("[algo]save :yaw=%d,pitch=%d,roll=%d",(int32_t)ori_eul_value.yaw,(int32_t)ori_eul_value.pitch,(int32_t)ori_eul_value.roll);
+
         }
     }
 
