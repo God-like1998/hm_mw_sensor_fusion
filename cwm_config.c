@@ -16,7 +16,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "HM_M3_HSET_0.0.5.0"
+#define ALGO_CONFIG_VERSION "SDK_HSET0.0.5.0"
 #define ALGO_RES_MAX_COUNT  25
 #define STANDBY_ODR 30
 
