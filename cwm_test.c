@@ -74,6 +74,7 @@ void test_print_calibration_value(void)
 void algo_test(void)
 {
     test_print_calibration_value();
+	CWM_OS_dbgPrintf("patch test");
 }
 
 
