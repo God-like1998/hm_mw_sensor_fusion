@@ -56,7 +56,7 @@ void algo_message_handle(uint32_t id,uint8_t* data)
     switch (id){
         case E_ALGO_MSG_LOG_DEBUG_CTL:{
             uint32_t* ctr = (uint32_t*)data;
-            algo_state_handle(E_ALGO_FUNC_LOG_CTL,NULL,ctr);
+            algo_state_handle(E_ALGO_FUNC_LOG_CTL,0,ctr);
         }            
         break;
         case E_ALGO_MSG_HS_ALGO_CTL:{
@@ -97,11 +97,11 @@ void algo_message_handle(uint32_t id,uint8_t* data)
         }
         break;
         case E_ALGO_MSG_AVG_AG_VALUE_EN:{
-            algo_state_handle(E_ALGO_FUNC_AG_AVG_VALUE,NULL,NULL);
+            algo_state_handle(E_ALGO_FUNC_AG_AVG_VALUE,0,NULL);
         }
         break;
         case E_ALGO_MSG_SAVE_BEFORE_POWEROFF:{
-            algo_state_handle(E_ALGO_FUNC_SAVE_BEFORE_POWEROFF,NULL,NULL);
+            algo_state_handle(E_ALGO_FUNC_SAVE_BEFORE_POWEROFF,0,NULL);
         }
         break;
 

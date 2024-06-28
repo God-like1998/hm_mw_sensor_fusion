@@ -1,15 +1,17 @@
 #include "stdint.h"
 #include "string.h"
 #include "stdbool.h"
-#include "stdio.h"
-
+#include "stdarg.h"
 #include "cwm_lib.h"
 #include "cwm_customio.h"
 #include "cwm_config.h"
 #include "cwm_port.h"
 
-
+/*某些平台会使用 printf 函数，需要 include "stdio.h" */
+#include "stdio.h"
+/*平台相关头文件*/
 #include "FreeRTOS.h"
+#include "task.h"
 
 /*平台相关头文件*/
 #include "syslog.h"
@@ -160,22 +162,15 @@ void algo_atci_init(void)
 
 
 
-/****************************************************打印接口************************************************/
-// int CWM_OS_dbgPrintf(const char * format,...) 
-// {
-//     va_list argList;
-//     int size = 0;
-//     char tBuffer[200];
-//     memset(tBuffer,0,200);
-
-//     va_start(argList, format);
-//     size = vsnprintf(tBuffer, sizeof(tBuffer) - 1, format, argList);
-//     va_end(argList);
-
-//     app_log_str(tBuffer);
-
-//     return 0;
-// }
+/****************************************************操作系统相关需要实现的接口************************************************/
+void cwm_taskENTER_CRITICAL(void)
+{
+    if(pdFALSE == xPortIsInsideInterrupt()) {taskENTER_CRITICAL();}   
+}
+void cwm_taskEXIT_CRITICAL(void)
+{
+    if(pdFALSE == xPortIsInsideInterrupt()) {taskEXIT_CRITICAL();}
+}
 
 /****************************************************dml、algo 需要实现的接口************************************************/
 ATTR_RWDATA_IN_NONCACHED_SYSRAM_4BYTE_ALIGN static uint8_t i2c_dma_write_buf[256];
@@ -306,7 +301,7 @@ int OS_algo_printstr(const char * format)
         log_hal_msgid_info("[" CWM_ALGO_TEST "] format is NULL", 0);
         return 0;
     }
-    CWM_OS_dbgPrintf("%s", format);
+    printf("%s", format);
 	return 0;
 }
 
@@ -318,7 +313,18 @@ os_api customio_os_api = {
     .i2cRead = OS_algo_i2c_read,
     .i2cWrite = OS_algo_i2c_write,
 };
-
+/****************************************************打印接口************************************************/
+int CWM_OS_dbgPrintf(const char * format,...)
+{
+    char str[120] = {0};
+    va_list    args;
+    va_start(args, format);
+    vsprintf(str, format, args);
+    va_end(args);
+	
+    OS_algo_printstr(str);
+    return 0;
+}
 /****************************************************配置 sensor 相关参数************************************************/
 #define CWM_DEFAUL_ODR     50
 const uint16_t defautl_odr = CWM_DEFAUL_ODR;
