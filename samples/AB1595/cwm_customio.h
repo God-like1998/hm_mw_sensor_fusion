@@ -29,6 +29,10 @@ extern const int dml_hs_run_init_angle_config[16];
 extern const float algo_quiet_lev;
 extern const uint32_t algo_quiet_timeout_min;
 
+extern const char key_burning;
+void customio_listen_pre(void);
+void customio_listen_after(void);
+
 void customio_read_flash_cali(uint8_t* data,uint32_t len);
 void customio_save_flash_cali(uint8_t* data,uint32_t len);
 void customio_read_flash_eul(uint8_t* data,uint32_t len);

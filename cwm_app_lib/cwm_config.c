@@ -215,7 +215,7 @@ static void algo_read_param_from_flash(void)
     uint8_t* addr =  cali_addr + 2;
     uint16_t crc_16 = check_sum(addr,len);
     if(crc_16 != ag->crc_16){
-        CWM_OS_dbgPrintf("[algo]read cali fail %d,%d\n",crc_16,ag->crc_16);            
+        CWM_OS_dbgPrintf("[algo] read cali fail %d,%d\n",crc_16,ag->crc_16);            
 
         algo_dev_info.ag_cali_value.valid = 0;
         algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_FAIL;
@@ -224,7 +224,7 @@ static void algo_read_param_from_flash(void)
     }
     else{            
         memcpy(&algo_dev_info.ag_cali_value.crc_16,cali_addr,2+26);
-        CWM_OS_dbgPrintf("[algo]read cali success\n");
+        CWM_OS_dbgPrintf("[algo] read cali success\n");
     }
 
 
@@ -233,13 +233,13 @@ static void algo_read_param_from_flash(void)
     len = 14;/*计算校验时，注意 4 字节对齐问题*/ 
     crc_16 = check_sum(addr,len);
     if(crc_16 != ag->auto_crc_16){
-        CWM_OS_dbgPrintf("[algo]read auto cali fail %d,%d\n",crc_16,ag->auto_crc_16);            
+        CWM_OS_dbgPrintf("[algo] read auto cali fail %d,%d\n",crc_16,ag->auto_crc_16);            
 
         algo_dev_info.ag_cali_value.auto_valid = 0;        
     }
     else{            
         memcpy(&algo_dev_info.ag_cali_value.auto_crc_16,&cali_addr[2 + 26],2+14);
-        CWM_OS_dbgPrintf("[algo]read auto cali success\n");
+        CWM_OS_dbgPrintf("[algo] read auto cali success\n");
     }    
 
 
@@ -254,7 +254,7 @@ static void algo_read_param_from_flash(void)
     addr =  ori_eul_addr + 2;
     crc_16 = check_sum(addr,len);
     if(crc_16 != ori_eul_value.crc_16){
-        CWM_OS_dbgPrintf("[algo]read orig eul fail %d,%d\n",crc_16,ori_eul_value.crc_16);
+        CWM_OS_dbgPrintf("[algo] read orig eul fail %d,%d\n",crc_16,ori_eul_value.crc_16);
 
         algo_dev_info.original_eul.valid = 0;
         algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_FAIL;
@@ -263,7 +263,7 @@ static void algo_read_param_from_flash(void)
     }
     else{
         memcpy(&algo_dev_info.original_eul,ori_eul_addr,sizeof(struct original_eul_t));
-        CWM_OS_dbgPrintf("[algo]read orig eul success\n");
+        CWM_OS_dbgPrintf("[algo] read orig eul success\n");
     }
 }
 
@@ -864,7 +864,15 @@ static void dml_algo_init(void)
     memcpy(&scl,dml_vendor_config,sizeof(scl));
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
 
-    CWM_LibPostInit(OS_algo_listen);
+    customio_listen_pre();
+    if(key_burning){
+        CWM_LibPostInit(NULL);
+    }
+    else{
+        CWM_LibPostInit(OS_algo_listen);
+    }
+    customio_listen_after();
+
     CWM_Dml_LibInit();
 
     char chipInfo[64];
@@ -1224,7 +1232,7 @@ struct ag_cali_back_t* get_algo_dev_info_ag_cali_value(void)
 
 void algo_init(void)
 {
-    CWM_OS_dbgPrintf("[algo]config version %s\n",ALGO_CONFIG_VERSION);
+    CWM_OS_dbgPrintf("[algo] config version %s\n",ALGO_CONFIG_VERSION);
 
     //从 FLASH 中读取 acc,gyro 校正参数和初始角度
     memset((uint8_t*)&algo_dev_info,0,sizeof(algo_dev_info));

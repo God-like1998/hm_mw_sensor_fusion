@@ -342,6 +342,19 @@ const int dml_hs_run_init_angle_config[16] = {1,2,0,15,3};
 const float algo_quiet_lev = 0.15f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 
+/****************************************************密钥检查接口************************************************/
+const char key_burning = 0;
+void customio_listen_pre(void)
+{
+    CWM_OS_dbgPrintf("[algo] cm__ah2__mac_init\n");
+    cm__ah2__mac_init();
+}
+void customio_listen_after(void)
+{
+    CWM_OS_dbgPrintf("[algo] cm__ah2__mac_deinit\n");
+    cm__ah2__mac_deinit();
+}
+
 /****************************************************flash 读写需要实现的接口************************************************/
 void customio_read_flash_cali(uint8_t* data,uint32_t len)
 {
