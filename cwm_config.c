@@ -17,7 +17,9 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 3：fae 针对客户更新的版本号
 */
 #define ALGO_CONFIG_VERSION "SDK_HSET_0.0.5.1"
+#define ALGO_AG_MAX_COUNT  25
 #define ALGO_RES_MAX_COUNT  25
+
 #define STANDBY_ODR 30
 
 #define SENSOR_ACC 1
@@ -52,7 +54,7 @@ struct algo_ag_t{
     uint8_t write;
     uint8_t read;
     uint8_t data_type;
-    struct ag_t data[ALGO_RES_MAX_COUNT];
+    struct ag_t data[ALGO_AG_MAX_COUNT];
 };
 struct algo_res_t{
     uint8_t size;
@@ -343,21 +345,21 @@ static void algo_ag_write(uint32_t id, float* f)
     if((buf->data_type & SENSOR_GYR) && (SENSOR_GYR == id)){
         memcpy(&buf->data[buf->write++].gx,f,4*3);
         buf->size++;
-        if(buf->write >= ALGO_RES_MAX_COUNT){
+        if(buf->write >= ALGO_AG_MAX_COUNT){
             buf->write = 0;
         }
-        if(buf->size >= ALGO_RES_MAX_COUNT){
-            buf->size = ALGO_RES_MAX_COUNT;
+        if(buf->size >= ALGO_AG_MAX_COUNT){
+            buf->size = ALGO_AG_MAX_COUNT;
             buf->read = buf->write;
         }
     }else if((SENSOR_ACC == buf->data_type) && (SENSOR_ACC == id)){
         memcpy(&buf->data[buf->write++].ax,f,4*3);
         buf->size++;
-        if(buf->write >= ALGO_RES_MAX_COUNT){
+        if(buf->write >= ALGO_AG_MAX_COUNT){
             buf->write = 0;
         }
-        if(buf->size >= ALGO_RES_MAX_COUNT){
-            buf->size = ALGO_RES_MAX_COUNT;
+        if(buf->size >= ALGO_AG_MAX_COUNT){
+            buf->size = ALGO_AG_MAX_COUNT;
             buf->read = buf->write;
         }
     }else if((buf->data_type & SENSOR_ACC) && (SENSOR_ACC == id)){
@@ -378,7 +380,7 @@ static void algo_ag_read(void)
         /*此处添加客户接口：将 acc、gyro 传给客户*/
         customio_read_ag(buf->data_type,f,i,buf->size);
 
-        if(buf->read >= ALGO_RES_MAX_COUNT){
+        if(buf->read >= ALGO_AG_MAX_COUNT){
             buf->read = 0;
         }
     }
