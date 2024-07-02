@@ -19,6 +19,7 @@ static void queue_init(void)
     memset(&queue,0,sizeof(queue));
 }
 
+//入队
 //queue data: data_len0,data0;  data_len1,data1;  data_len2,data2; ...... data_lenn,datan;
 //data0,data1,data2,datan: msg.id,msg.data
 static int32_t queue_add(uint8_t* data, uint16_t data_len)
@@ -54,6 +55,7 @@ static int32_t queue_add(uint8_t* data, uint16_t data_len)
     return 0;
 }
 
+//出队
 static int32_t queue_get(uint8_t* data)
 {
     if(NULL == data)
@@ -66,9 +68,12 @@ static int32_t queue_get(uint8_t* data)
     }
     
     uint16_t data_len;
+    //确保从最早入队的数据开始出队（此处的tail其实不是队尾）
     uint16_t tail = (queue.head >= queue.size)?(queue.head - queue.size):(QUEUE_MAX_BUF_SIZE + queue.head - queue.size);
+    // uint16_t tail = (queue.head+queue.size)/QUEUE_MAX_BUF_SIZE;
     uint8_t* p = (uint8_t*)&data_len;
     uint16_t des_len = 2;
+    //初始化定义2个字节的des_len,来读取2个byte的数据长度是多少，然后通过指针p指向数据长度data_len来获取长度值
     while(des_len){
         *(p++) = queue.buf[tail++];
         tail &= QUEUE_MAX_BUF_SIZE - 1;
@@ -81,6 +86,7 @@ static int32_t queue_get(uint8_t* data)
         return -1;
     }
 
+    //将指针p指向真正的数据data地址,然后将要读取的数据长度data_len赋值给des_len,循环执行des_len次,将queue里数据处理到指向data的位置
     p = data;
     des_len = data_len;
     while(des_len){
@@ -89,6 +95,7 @@ static int32_t queue_get(uint8_t* data)
         des_len--;
     }
 
+    //将队列里的数据大小更新，减去读走的真正数据长度个数data_len以及2byte的数据长度定义
     queue.size -= data_len + 2;
     cwm_taskEXIT_CRITICAL();
     return 0;

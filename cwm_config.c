@@ -16,7 +16,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.5.0"
+#define ALGO_CONFIG_VERSION "SDK_HSET0.0.5.0"
 #define ALGO_RES_MAX_COUNT  25
 #define STANDBY_ODR 30
 
@@ -26,6 +26,8 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 #define SENSOR_STANDBY  1
 
 #define FABS(x) (((x) >= 0.f)?(x):(-x))
+
+#define CWM_SKIP_SEC_VERIFY (0)
 
 enum{
     E_STATE_LEV0,
@@ -858,11 +860,34 @@ static void dml_algo_init(void)
     /* -----------------algo_dml_init------------------------ */
     CWM_LibPreInit(&customio_os_api);
 
+//从FLASH里读取4k的security_code
+    //nvkey_read_data(Sec_ID,data_point_addr,4096);
+//将读出来的FLASH数据转存到RAM，才可以将ram_buffer通过SCL_CHIP_VENDOR_CONFIG设定给算法
+    //memcpy(ram_buffer,data_point_addr,4096);
+
+#if CWM_SKIP_SEC_VERIFY
     /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
     memcpy(&scl,dml_vendor_config,sizeof(scl));
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
+    CWM_LibPostInit(OS_algo_listen);
+#else
+/* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
+    memcpy(&scl,dml_vendor_security_config,sizeof(scl));
+    CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
+    
+#ifdef MTK_AWS_MCE_ENABLE
+    CWM_OS_dbgPrintf("cm__ah2__mac2_init \n");
+    cm__ah2__mac2_init();
+#else
+    CWM_OS_dbgPrintf("cm__ah2__mac_init \n");
+    cm__ah2__mac_init();
+#endif
 
     CWM_LibPostInit(OS_algo_listen);
+
+    cm__ah2__mac_deinit();
+#endif
+
     CWM_Dml_LibInit();
 
     char chipInfo[64];
