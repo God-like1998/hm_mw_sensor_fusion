@@ -16,12 +16,8 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-<<<<<<< HEAD:cwm_config.c
-#define ALGO_CONFIG_VERSION "SDK_HSET0.0.5.0"
-=======
 #define ALGO_CONFIG_VERSION "SDK_HSET_0.0.6.0"
 #define ALGO_AG_MAX_COUNT  25
->>>>>>> bbd7ad55df734f93aaa40697665c9728d76f3584:cwm_app_lib/cwm_config.c
 #define ALGO_RES_MAX_COUNT  25
 
 #define STANDBY_ODR 30
@@ -889,12 +885,6 @@ static void dml_algo_init(void)
     cm__ah2__mac_init();
 #endif
 
-<<<<<<< HEAD:cwm_config.c
-    CWM_LibPostInit(OS_algo_listen);
-
-    cm__ah2__mac_deinit();
-#endif
-=======
     customio_listen_pre();
     if(key_burning){
         CWM_LibPostInit(NULL);
@@ -903,7 +893,6 @@ static void dml_algo_init(void)
         CWM_LibPostInit(OS_algo_listen);
     }
     customio_listen_after();
->>>>>>> bbd7ad55df734f93aaa40697665c9728d76f3584:cwm_app_lib/cwm_config.c
 
     CWM_Dml_LibInit();
 
