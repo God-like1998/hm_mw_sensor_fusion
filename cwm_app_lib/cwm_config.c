@@ -16,8 +16,14 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
+<<<<<<< HEAD:cwm_config.c
 #define ALGO_CONFIG_VERSION "SDK_HSET0.0.5.0"
+=======
+#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.6.0"
+#define ALGO_AG_MAX_COUNT  25
+>>>>>>> bbd7ad55df734f93aaa40697665c9728d76f3584:cwm_app_lib/cwm_config.c
 #define ALGO_RES_MAX_COUNT  25
+
 #define STANDBY_ODR 30
 
 #define SENSOR_ACC 1
@@ -54,7 +60,7 @@ struct algo_ag_t{
     uint8_t write;
     uint8_t read;
     uint8_t data_type;
-    struct ag_t data[ALGO_RES_MAX_COUNT];
+    struct ag_t data[ALGO_AG_MAX_COUNT];
 };
 struct algo_res_t{
     uint8_t size;
@@ -215,7 +221,7 @@ static void algo_read_param_from_flash(void)
     uint8_t* addr =  cali_addr + 2;
     uint16_t crc_16 = check_sum(addr,len);
     if(crc_16 != ag->crc_16){
-        CWM_OS_dbgPrintf("[algo]read cali fail %d,%d\n",crc_16,ag->crc_16);            
+        CWM_OS_dbgPrintf("[algo] read cali fail %d,%d\n",crc_16,ag->crc_16);            
 
         algo_dev_info.ag_cali_value.valid = 0;
         algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_FAIL;
@@ -224,7 +230,7 @@ static void algo_read_param_from_flash(void)
     }
     else{            
         memcpy(&algo_dev_info.ag_cali_value.crc_16,cali_addr,2+26);
-        CWM_OS_dbgPrintf("[algo]read cali success\n");
+        CWM_OS_dbgPrintf("[algo] read cali success\n");
     }
 
 
@@ -233,13 +239,13 @@ static void algo_read_param_from_flash(void)
     len = 14;/*计算校验时，注意 4 字节对齐问题*/ 
     crc_16 = check_sum(addr,len);
     if(crc_16 != ag->auto_crc_16){
-        CWM_OS_dbgPrintf("[algo]read auto cali fail %d,%d\n",crc_16,ag->auto_crc_16);            
+        CWM_OS_dbgPrintf("[algo] read auto cali fail %d,%d\n",crc_16,ag->auto_crc_16);            
 
         algo_dev_info.ag_cali_value.auto_valid = 0;        
     }
     else{            
         memcpy(&algo_dev_info.ag_cali_value.auto_crc_16,&cali_addr[2 + 26],2+14);
-        CWM_OS_dbgPrintf("[algo]read auto cali success\n");
+        CWM_OS_dbgPrintf("[algo] read auto cali success\n");
     }    
 
 
@@ -254,7 +260,7 @@ static void algo_read_param_from_flash(void)
     addr =  ori_eul_addr + 2;
     crc_16 = check_sum(addr,len);
     if(crc_16 != ori_eul_value.crc_16){
-        CWM_OS_dbgPrintf("[algo]read orig eul fail %d,%d\n",crc_16,ori_eul_value.crc_16);
+        CWM_OS_dbgPrintf("[algo] read orig eul fail %d,%d\n",crc_16,ori_eul_value.crc_16);
 
         algo_dev_info.original_eul.valid = 0;
         algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_FAIL;
@@ -263,7 +269,7 @@ static void algo_read_param_from_flash(void)
     }
     else{
         memcpy(&algo_dev_info.original_eul,ori_eul_addr,sizeof(struct original_eul_t));
-        CWM_OS_dbgPrintf("[algo]read orig eul success\n");
+        CWM_OS_dbgPrintf("[algo] read orig eul success\n");
     }
 }
 
@@ -345,21 +351,21 @@ static void algo_ag_write(uint32_t id, float* f)
     if((buf->data_type & SENSOR_GYR) && (SENSOR_GYR == id)){
         memcpy(&buf->data[buf->write++].gx,f,4*3);
         buf->size++;
-        if(buf->write >= ALGO_RES_MAX_COUNT){
+        if(buf->write >= ALGO_AG_MAX_COUNT){
             buf->write = 0;
         }
-        if(buf->size >= ALGO_RES_MAX_COUNT){
-            buf->size = ALGO_RES_MAX_COUNT;
+        if(buf->size >= ALGO_AG_MAX_COUNT){
+            buf->size = ALGO_AG_MAX_COUNT;
             buf->read = buf->write;
         }
     }else if((SENSOR_ACC == buf->data_type) && (SENSOR_ACC == id)){
         memcpy(&buf->data[buf->write++].ax,f,4*3);
         buf->size++;
-        if(buf->write >= ALGO_RES_MAX_COUNT){
+        if(buf->write >= ALGO_AG_MAX_COUNT){
             buf->write = 0;
         }
-        if(buf->size >= ALGO_RES_MAX_COUNT){
-            buf->size = ALGO_RES_MAX_COUNT;
+        if(buf->size >= ALGO_AG_MAX_COUNT){
+            buf->size = ALGO_AG_MAX_COUNT;
             buf->read = buf->write;
         }
     }else if((buf->data_type & SENSOR_ACC) && (SENSOR_ACC == id)){
@@ -380,7 +386,7 @@ static void algo_ag_read(void)
         /*此处添加客户接口：将 acc、gyro 传给客户*/
         customio_read_ag(buf->data_type,f,i,buf->size);
 
-        if(buf->read >= ALGO_RES_MAX_COUNT){
+        if(buf->read >= ALGO_AG_MAX_COUNT){
             buf->read = 0;
         }
     }
@@ -883,10 +889,21 @@ static void dml_algo_init(void)
     cm__ah2__mac_init();
 #endif
 
+<<<<<<< HEAD:cwm_config.c
     CWM_LibPostInit(OS_algo_listen);
 
     cm__ah2__mac_deinit();
 #endif
+=======
+    customio_listen_pre();
+    if(key_burning){
+        CWM_LibPostInit(NULL);
+    }
+    else{
+        CWM_LibPostInit(OS_algo_listen);
+    }
+    customio_listen_after();
+>>>>>>> bbd7ad55df734f93aaa40697665c9728d76f3584:cwm_app_lib/cwm_config.c
 
     CWM_Dml_LibInit();
 
@@ -1247,7 +1264,7 @@ struct ag_cali_back_t* get_algo_dev_info_ag_cali_value(void)
 
 void algo_init(void)
 {
-    CWM_OS_dbgPrintf("[algo]config version %s\n",ALGO_CONFIG_VERSION);
+    CWM_OS_dbgPrintf("[algo] config version %s\n",ALGO_CONFIG_VERSION);
 
     //从 FLASH 中读取 acc,gyro 校正参数和初始角度
     memset((uint8_t*)&algo_dev_info,0,sizeof(algo_dev_info));
