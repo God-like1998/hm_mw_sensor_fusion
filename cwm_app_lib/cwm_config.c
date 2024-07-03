@@ -29,6 +29,8 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 
 #define FABS(x) (((x) >= 0.f)?(x):(-x))
 
+#define CWM_SKIP_SEC_VERIFY (1)
+
 enum{
     E_STATE_LEV0,
     E_STATE_LEV1,
@@ -860,19 +862,20 @@ static void dml_algo_init(void)
     /* -----------------algo_dml_init------------------------ */
     CWM_LibPreInit(&customio_os_api);
 
+#if CWM_SKIP_SEC_VERIFY
     /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
     memcpy(&scl,dml_vendor_config,sizeof(scl));
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
+    CWM_LibPostInit(OS_algo_listen);
+#else
+/* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
+    memcpy(&scl,dml_vendor_security_config,sizeof(scl));
+    CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
 
     customio_listen_pre();
-    if(key_burning){
-        CWM_LibPostInit(NULL);
-    }
-    else{
-        CWM_LibPostInit(OS_algo_listen);
-    }
+    CWM_LibPostInit(OS_algo_listen);
     customio_listen_after();
-
+#endif
     CWM_Dml_LibInit();
 
     char chipInfo[64];

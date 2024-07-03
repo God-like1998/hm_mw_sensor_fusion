@@ -16,6 +16,7 @@ void cwm_taskEXIT_CRITICAL(void);
 extern os_api customio_os_api;
 extern const uint16_t defautl_odr;
 extern const int dml_vendor_config[16];
+
 extern const int dml_hw_config[16];
 extern const int dml_ag_config[16];
 extern const int dml_ag_pref_config_default[16];
