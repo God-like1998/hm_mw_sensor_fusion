@@ -9,7 +9,7 @@ extern "C"{
 #include "string.h"
 #include "stdbool.h"
 
-#define MSG_DATA_MAX_SIZE (4+4*16)/*max size data: setting id + setting data*/
+#define MSG_DATA_MAX_SIZE (4+4*16)/*max size data: setting id + setting data; cannot be changed*/
 
 struct algo_msg_t{
     uint32_t id;

@@ -5,16 +5,13 @@
 extern "C"{
 #endif
 
-#include "FreeRTOS.h"
-#include "task.h"
+
 #include "cwm_lib.h"
-/*某些平台会使用 printf 函数，需要 include "stdio.h" */
-#include "stdio.h"
 
 
-#define cwm_taskENTER_CRITICAL()  {if(pdFALSE == xPortIsInsideInterrupt()) {taskENTER_CRITICAL();}}
-#define cwm_taskEXIT_CRITICAL()   {if(pdFALSE == xPortIsInsideInterrupt()) {taskEXIT_CRITICAL();}}
-#define CWM_OS_dbgPrintf(format,...)  printf(format,##__VA_ARGS__)
+extern int CWM_OS_dbgPrintf(const char * format,...);
+void cwm_taskENTER_CRITICAL(void);
+void cwm_taskEXIT_CRITICAL(void);
 
 extern os_api customio_os_api;
 extern const uint16_t defautl_odr;

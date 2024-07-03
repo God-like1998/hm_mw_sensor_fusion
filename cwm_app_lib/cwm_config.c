@@ -876,24 +876,11 @@ static void dml_algo_init(void)
 /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
     memcpy(&scl,dml_vendor_security_config,sizeof(scl));
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
-    
-#ifdef MTK_AWS_MCE_ENABLE
-    CWM_OS_dbgPrintf("cm__ah2__mac2_init \n");
-    cm__ah2__mac2_init();
-#else
-    CWM_OS_dbgPrintf("cm__ah2__mac_init \n");
-    cm__ah2__mac_init();
-#endif
 
     customio_listen_pre();
-    if(key_burning){
-        CWM_LibPostInit(NULL);
-    }
-    else{
-        CWM_LibPostInit(OS_algo_listen);
-    }
+    CWM_LibPostInit(OS_algo_listen);
     customio_listen_after();
-
+#endif
     CWM_Dml_LibInit();
 
     char chipInfo[64];
