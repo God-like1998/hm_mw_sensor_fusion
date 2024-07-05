@@ -16,7 +16,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.6.0"
+#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.6.0" 
 #define ALGO_AG_MAX_COUNT  25
 #define ALGO_RES_MAX_COUNT  25
 
@@ -862,14 +862,15 @@ static void dml_algo_init(void)
     memcpy(&scl,dml_vendor_config,sizeof(scl));
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
 
-    customio_listen_pre();
+    
     if(key_burning){
-        CWM_LibPostInit(NULL);
+        customio_listen_pre();
+        CWM_LibPostInit(OS_algo_listen);
+        customio_listen_after();
     }
     else{
         CWM_LibPostInit(OS_algo_listen);
     }
-    customio_listen_after();
 
     CWM_Dml_LibInit();
 
@@ -1325,6 +1326,7 @@ void algo_data_handle(void)
     if(algo_dev_info.event_ag_avg_value_1s_finish){
         algo_dev_info.en_ag_avg_value_1s = 0;
         algo_dev_info.event_ag_avg_value_1s_finish = 0;
+
 
         /*此处添加客户接口：将 ag 平均值传给客户*/
         customio_read_ag_avg_value((float *)&algo_dev_info.ag_avg_value_1s.ag);

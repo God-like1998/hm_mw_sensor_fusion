@@ -325,6 +325,9 @@ int CWM_OS_dbgPrintf(const char * format,...)
     OS_algo_printstr(str);
     return 0;
 }
+
+
+
 /****************************************************配置 sensor 相关参数************************************************/
 #define CWM_DEFAUL_ODR     50
 const uint16_t defautl_odr = CWM_DEFAUL_ODR;
@@ -415,13 +418,9 @@ uint8_t nums：
 */
 void customio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
-    // CWM_OS_dbgPrintf("[customio]read acc-gyro*1000: %d,%d,%d   ,%d,%d,%d\n",
-    //         (int32_t)(f[0]*1000),
-    //         (int32_t)(f[1]*1000),
-    //         (int32_t)(f[2]*1000),
-    //         (int32_t)(f[3]*1000),
-    //         (int32_t)(f[4]*1000),
-    //         (int32_t)(f[5]*1000));
+    // CWM_OS_dbgPrintf("[customio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
+    //         f[0],f[1],f[2],
+    //         f[3],f[4],f[5]);
 }
 /*算法输出欧拉角和四元素数据：在算法设置中调用，
 float *f:
@@ -437,14 +436,9 @@ float *f:
 */
 void customio_read_eul_qua(float *f)
 {
-    CWM_OS_dbgPrintf("[customio]read eul-qua*1000: yaw=%d, pitch=%d, roll=%d, x=%d, y=%d, z=%d, w=%d\n",
-            (int32_t)(f[0]*1000),
-            (int32_t)(f[1]*1000),
-            (int32_t)(f[2]*1000),
-            (int32_t)(f[3]*1000),
-            (int32_t)(f[4]*1000),
-            (int32_t)(f[5]*1000),
-            (int32_t)(f[6]*1000));
+    CWM_OS_dbgPrintf("[customio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
+            f[0],f[1],f[2],
+            f[3],f[4],f[5],f[6]);
 }
 /*算法输出 ag 数据 1s 平均值，在算法设置中调用，
 float *f:
@@ -459,13 +453,9 @@ float *f:
 */
 void customio_read_ag_avg_value(float *f)
 {
-    CWM_OS_dbgPrintf("[customio]ag avg*1000:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
-            (int32_t)(f[0]*1000),
-            (int32_t)(f[1]*1000),
-            (int32_t)(f[2]*1000),
-            (int32_t)(f[3]*1000),
-            (int32_t)(f[4]*1000),
-            (int32_t)(f[5]*1000));
+    CWM_OS_dbgPrintf("[customio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
+            f[0],f[1],f[2],
+            f[3],f[4],f[5]);
 }
 /*算法输出 spv 校正结果，在算法设置中调用，
 校正结果枚举：
