@@ -829,8 +829,6 @@ static void algo_avg_ag_value_en(void)
 
     algo_dev_info.en_ag_avg_value_1s = 1;
     memset(&algo_dev_info.ag_avg_value_1s,0,sizeof(struct ag_avg_t));
-    CWM_Sensor_Enable(IDX_ACCEL);
-    CWM_Sensor_Enable(IDX_GYRO);
 }
 
 static void algo_save_before_poweroff(void)
@@ -1327,9 +1325,6 @@ void algo_data_handle(void)
     if(algo_dev_info.event_ag_avg_value_1s_finish){
         algo_dev_info.en_ag_avg_value_1s = 0;
         algo_dev_info.event_ag_avg_value_1s_finish = 0;
-
-        CWM_Sensor_Disable(IDX_ACCEL);
-        CWM_Sensor_Disable(IDX_GYRO);
 
         /*此处添加客户接口：将 ag 平均值传给客户*/
         customio_read_ag_avg_value((float *)&algo_dev_info.ag_avg_value_1s.ag);
