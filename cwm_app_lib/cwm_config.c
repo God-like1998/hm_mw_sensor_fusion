@@ -16,7 +16,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.6.0" 
+#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.7.0" 
 #define ALGO_AG_MAX_COUNT  25
 #define ALGO_RES_MAX_COUNT  25
 
@@ -271,7 +271,11 @@ static void algo_read_param_from_flash(void)
 
 static void algo_quiet_enable(bool reset)
 {
-    CWM_OS_dbgPrintf("[algo]algo_quiet_enable %d\n",reset);
+    CWM_OS_dbgPrintf("[algo]algo_quiet_enable reset=%d,sensor_off=%d\n",(uint8_t)reset,standby_sensor_off);
+
+    if(standby_sensor_off)
+        return;
+        
     if(reset){
         fg_quiet = 1;
     }
@@ -862,15 +866,9 @@ static void dml_algo_init(void)
     memcpy(&scl,dml_vendor_config,sizeof(scl));
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
 
-    
-    if(key_burning){
-        customio_listen_pre();
-        CWM_LibPostInit(OS_algo_listen);
-        customio_listen_after();
-    }
-    else{
-        CWM_LibPostInit(OS_algo_listen);
-    }
+    customio_listen_pre();
+    CWM_LibPostInit(OS_algo_listen);
+    customio_listen_after();
 
     CWM_Dml_LibInit();
 
@@ -969,6 +967,49 @@ static void dml_algo_init(void)
     
 }
 
+/*在大小核项目中，算法放小核，如果密钥验证涉及到大核，那么需要先在大核调用 cwm_main_mcu_dml_init，然后小核执行初始化。如 bes2700 项目*/
+void cwm_main_mcu_dml_init(void)
+{
+	SettingControl_t scl;
+	OsAPI device_func =
+    {
+        .dbgOutput = customio_os_api.dbgOutput,
+    };
+	//get lib version information
+	memset(&scl, 0, sizeof(scl));
+	scl.iData[0] = 1;
+	CWM_SettingControl(SCL_GET_LIB_INFO, &scl);
+	CWM_OS_dbgPrintf("[algo]version:%d.%d.%d.%d product:%d\n", scl.iData[1], scl.iData[2], scl.iData[3], scl.iData[4], scl.iData[5]);
+
+	CWM_LibPreInit(&device_func);
+
+    /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
+    memcpy(&scl,dml_vendor_config,sizeof(scl));
+    CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
+
+    customio_mainmcu_listen_pre();
+	CWM_LibPostInit(NULL);
+    customio_mainmcu_listen_after();
+
+	//get chip information
+	char chipInfo[64];
+	memset(&scl, 0, sizeof(scl));
+	scl.iData[0] = 1;
+	scl.iData[1] = 1;
+	scl.iData[2] = (int)chipInfo;
+	scl.iData[3] = sizeof(chipInfo);
+	scl.iData[4] = 0;
+	scl.iData[5] = 0;
+	scl.iData[6] = 0;
+	CWM_SettingControl(SCL_GET_CHIP_INFO, &scl);
+	CWM_OS_dbgPrintf("[algo]have_security = %d.%d ret_buff_size = %d	chipInfo = %s\n", scl.iData[5], scl.iData[6], scl.iData[4], chipInfo);
+	CWM_OS_dbgPrintf("[algo]chip_settings = %d, %d, %d\n", scl.iData[9], scl.iData[10], scl.iData[11]);
+	if (scl.iData[5] == 1)
+		CWM_OS_dbgPrintf("[algo]verify security_code Pass\n");
+	else
+		CWM_OS_dbgPrintf("[algo]verify security_code Fail\n");
+}
+
 static void spv_dis(void)
 {
     CWM_Sensor_Disable(IDX_ALGO_SPV);
@@ -979,8 +1020,13 @@ static void spv_dis(void)
 static void algo_standby_open(void* param)
 {
     CWM_OS_dbgPrintf("[algo]algo_standby_open\n");
-    struct sensor_setting_t setting = {STANDBY_ODR,SENSOR_STANDBY,4,2000};
-    set_sensor(1,SENSOR_ACC,&setting);
+    if(standby_sensor_off){
+        struct sensor_setting_t setting = {0,0,0,0};
+        set_sensor(0,0,&setting);
+    }else{
+        struct sensor_setting_t setting = {STANDBY_ODR,SENSOR_STANDBY,4,2000};
+        set_sensor(1,SENSOR_ACC,&setting);
+    }
 }
 static void algo_standby_close(void* param)
 {
@@ -1149,7 +1195,7 @@ static void algo_func_save_before_poweroff(void* param)
     即只会执行新状态的 open。
 */
 static const struct algo_t algo_state_table[] ={
-    {E_STATE_STANDBY,        E_STATE_LEV0,1,algo_standby_open,      NULL,algo_standby_close},/*level1 表示待机状态，只有开启，没有关闭*/
+    {E_STATE_STANDBY,        E_STATE_LEV0,1,algo_standby_open,      NULL,algo_standby_close},
     {E_STATE_STANDBY_SPV,    E_STATE_LEV1,0,algo_standby_spv_open,  NULL,algo_standby_spv_close},
     {E_STATE_HS_ORIT,        E_STATE_LEV2,1,algo_hs_orit_open,      NULL,algo_hs_orit_close},
     {E_STATE_SPV_WHOLE,      E_STATE_LEV3,1,algo_spv_whl_cali_open, NULL,algo_spv_whl_cali_close},
@@ -1158,7 +1204,7 @@ static const struct algo_t algo_state_table[] ={
     {E_STATE_ORIG_EUL_CALI,  E_STATE_LEV3,1,algo_orig_eul_cali_open,NULL,algo_orig_eul_cali_close},
 };
 static const struct func_t algo_func_table[] ={
-    {E_ALGO_FUNC_LOG_CTL,                algo_func_log_ctl},/*level1 表示待机状态，只有开启，没有关闭*/
+    {E_ALGO_FUNC_LOG_CTL,                algo_func_log_ctl},
     {E_ALGO_FUNC_AG_AVG_VALUE,           algo_func_ag_avg_value},
     {E_ALGO_FUNC_SAVE_BEFORE_POWEROFF,   algo_func_save_before_poweroff},
 };
