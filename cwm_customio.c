@@ -354,12 +354,6 @@ void customio_listen_pre(void)
 void customio_listen_after(void)
 {
 }
-void customio_mainmcu_listen_pre(void)
-{
-}
-void customio_mainmcu_listen_after(void)
-{
-}
 /****************************************************flash 读写需要实现的接口************************************************/
 void customio_read_flash_cali(uint8_t* data,uint32_t len)
 {

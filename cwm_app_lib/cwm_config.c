@@ -16,7 +16,7 @@ HSET：头戴耳机项目;EAR：TWS 耳机项目；WAT: 手表项目
 2：sdk 小版本号
 3：fae 针对客户更新的版本号
 */
-#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.7.0"  
+#define ALGO_CONFIG_VERSION "SDK_HSET_0.0.7.0" 
 #define ALGO_AG_MAX_COUNT  25
 #define ALGO_RES_MAX_COUNT  25
 
@@ -965,49 +965,6 @@ static void dml_algo_init(void)
     // CWM_Sensor_Enable(IDX_ACCEL);
     // CWM_Sensor_Enable(IDX_GYRO);
     
-}
-
-/*在大小核项目中，算法放小核，如果密钥验证涉及到大核，那么需要先在大核调用 cwm_main_mcu_dml_init，然后小核执行初始化。如 bes2700 项目*/
-void cwm_main_mcu_dml_init(void)
-{
-	SettingControl_t scl;
-	OsAPI device_func =
-    {
-        .dbgOutput = customio_os_api.dbgOutput,
-    };
-	//get lib version information
-	memset(&scl, 0, sizeof(scl));
-	scl.iData[0] = 1;
-	CWM_SettingControl(SCL_GET_LIB_INFO, &scl);
-	CWM_OS_dbgPrintf("[algo]version:%d.%d.%d.%d product:%d\n", scl.iData[1], scl.iData[2], scl.iData[3], scl.iData[4], scl.iData[5]);
-
-	CWM_LibPreInit(&device_func);
-
-    /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
-    memcpy(&scl,dml_vendor_config,sizeof(scl));
-    CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
-
-    customio_mainmcu_listen_pre();
-	CWM_LibPostInit(NULL);
-    customio_mainmcu_listen_after();
-
-	//get chip information
-	char chipInfo[64];
-	memset(&scl, 0, sizeof(scl));
-	scl.iData[0] = 1;
-	scl.iData[1] = 1;
-	scl.iData[2] = (int)chipInfo;
-	scl.iData[3] = sizeof(chipInfo);
-	scl.iData[4] = 0;
-	scl.iData[5] = 0;
-	scl.iData[6] = 0;
-	CWM_SettingControl(SCL_GET_CHIP_INFO, &scl);
-	CWM_OS_dbgPrintf("[algo]have_security = %d.%d ret_buff_size = %d	chipInfo = %s\n", scl.iData[5], scl.iData[6], scl.iData[4], chipInfo);
-	CWM_OS_dbgPrintf("[algo]chip_settings = %d, %d, %d\n", scl.iData[9], scl.iData[10], scl.iData[11]);
-	if (scl.iData[5] == 1)
-		CWM_OS_dbgPrintf("[algo]verify security_code Pass\n");
-	else
-		CWM_OS_dbgPrintf("[algo]verify security_code Fail\n");
 }
 
 static void spv_dis(void)

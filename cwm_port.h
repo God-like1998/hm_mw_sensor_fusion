@@ -56,10 +56,6 @@ struct eul_qua_t{
     float z;    //quaternion_z
     float w;    //quaternion_w
 };
-
-/*在大小核项目中，算法放小核，如果密钥验证涉及到大核，那么需要先在大核调用 cwm_main_mcu_dml_init，然后小核执行初始化。如 bes2700 项目*/
-void cwm_main_mcu_dml_init(void);
-
 void cwm_algo_task(void *pvParameters);
 void cwm_log_debug_ctl(uint32_t ctr);
 void cwm_hs_algo_ctl(uint32_t ctr);

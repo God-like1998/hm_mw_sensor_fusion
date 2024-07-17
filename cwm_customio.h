@@ -33,8 +33,6 @@ extern const uint32_t algo_quiet_timeout_min;
 
 void customio_listen_pre(void);
 void customio_listen_after(void);
-void customio_mainmcu_listen_pre(void);
-void customio_mainmcu_listen_after(void);
 void customio_read_flash_cali(uint8_t* data,uint32_t len);
 void customio_save_flash_cali(uint8_t* data,uint32_t len);
 void customio_read_flash_eul(uint8_t* data,uint32_t len);
