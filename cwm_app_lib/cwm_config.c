@@ -759,16 +759,9 @@ static void algo_spv_cali_en(uint32_t mode)
     scl.iData[3] = -1;
     CWM_SettingControl(SCL_SENS_CALI_CONFIG, &scl);
 
+    //acc_gyro noise&bias
     memset(&scl, 0, sizeof(scl));
-    scl.iData[0] = 1;
-    scl.iData[1] = 5; // z pluse point to sky
-    scl.iData[2] = 5; // time-out period
-    scl.iData[3] = defautl_odr;       // odr
-    scl.iData[4] = 28400000; // gyro_Lsb_Dps
-    scl.iData[5] = 3000;     // acc_noise
-    scl.iData[6] = 120000;  // gyro_noise
-    scl.iData[7] = 50000;   // acc_bias
-    scl.iData[8] = 3300000; // gyro_bias
+    memcpy(&scl,dml_spv_config,sizeof(scl));
     CWM_SettingControl(SCL_SPV_CONFIG, &scl);
 
     // [1] = 1 整机校正， [1] = 2 PCBA校正，[1] = 5 六面校正

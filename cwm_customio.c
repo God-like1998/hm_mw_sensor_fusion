@@ -342,12 +342,12 @@ const int dml_ag_pref_config_standby[16] = {1,0,0,100};
 const int dml_log_config[16] = {1,0,0,1+2+4+8,64+5,3,-1-1-2-4-8-16-32,-1};
 const int dml_log_debug_config[16] = {1,1+2+4+8+16};
 const int dml_hs_run_init_angle_config[16] = {1,2,0,15,3};
+const int dml_spv_config[16] = {1,5,5,CWM_DEFAUL_ODR,28400000,3000,120000,50000,7000000};
 const uint8_t standby_sensor_off = 0;
 const float algo_quiet_lev = 0.15f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 
 /****************************************************密钥检查接口************************************************/
-
 void customio_listen_pre(void)
 {
 }

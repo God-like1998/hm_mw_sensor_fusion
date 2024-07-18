@@ -26,6 +26,7 @@ extern const int dml_hs_intf_config[16];
 extern const int dml_log_config[16];
 extern const int dml_log_debug_config[16];
 extern const int dml_hs_run_init_angle_config[16];
+extern const int dml_spv_config[16];
 extern const uint8_t standby_sensor_off;
 extern const float algo_quiet_lev;
 extern const uint32_t algo_quiet_timeout_min;
