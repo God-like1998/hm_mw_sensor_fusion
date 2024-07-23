@@ -2,7 +2,6 @@
 #include "string.h"
 #include "stdbool.h"
 #include  "cwm_common.h"
-#include  "cwm_config.h"
 #include "cwm_customio.h"
 /**************************************************algo queue**************************************************/
 #define QUEUE_MAX_BUF_SIZE (256)/*必须是 2 的整数倍*/
@@ -29,7 +28,7 @@ static int32_t queue_add(uint8_t* data, uint16_t data_len)
     cwm_taskENTER_CRITICAL();
     if(((queue.size + 2 + data_len) > QUEUE_MAX_BUF_SIZE) || (data_len > sizeof(struct algo_msg_t))){
         cwm_taskEXIT_CRITICAL();
-        CWM_OS_dbgPrintf("[algo_que]add error: queu full\n");
+        cwm_app_debug("[algo]queue add error: queu full\n");
         return -1;
     }
 
@@ -77,7 +76,7 @@ static int32_t queue_get(uint8_t* data)
 
     if((data_len > (queue.size - 2)) || (data_len > sizeof(struct algo_msg_t))){
         cwm_taskEXIT_CRITICAL();
-        CWM_OS_dbgPrintf("[algo_que]get error: len too long\n");
+        cwm_app_debug("[algo]queue get error: len too long\n");
         return -1;
     }
 
@@ -108,7 +107,7 @@ int32_t message_to_algo(uint32_t id,uint32_t value)
     msg.id = id;
     *v = value;
 
-    CWM_OS_dbgPrintf("[algo]message_to_algo %u %u\n",id,value);
+    cwm_app_debug("[algo]message_to_algo %u %u\n",id,value);
     return queue_add((uint8_t*)&msg,4+4);
 }
 

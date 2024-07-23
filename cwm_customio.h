@@ -9,7 +9,7 @@ extern "C"{
 #include "cwm_lib.h"
 
 
-extern int CWM_OS_dbgPrintf(const char * format,...);
+extern int cwm_app_debug(const char * format,...);
 void cwm_taskENTER_CRITICAL(void);
 void cwm_taskEXIT_CRITICAL(void);
 

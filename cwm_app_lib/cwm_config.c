@@ -185,12 +185,12 @@ static void save_cali_value(void)
     customio_read_flash_cali((uint8_t*)&cali_value,sizeof(cali_value));
 
     if(!memcmp(&algo_dev_info.ag_cali_value,&cali_value,sizeof(struct ag_cali_back_t))){
-        CWM_OS_dbgPrintf("[algo]flash write ag_cali_value succuss\n");
+        cwm_app_debug("[algo]flash write ag_cali_value succuss\n");
     }else{
-        CWM_OS_dbgPrintf("[algo]flash write ag_cali_value fail\n");
+        cwm_app_debug("[algo]flash write ag_cali_value fail\n");
     }
 
-    CWM_OS_dbgPrintf("[algo]save :ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
+    cwm_app_debug("[algo]save :ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
         cali_value.ax,
         cali_value.ay,
         cali_value.az,
@@ -215,7 +215,7 @@ static void algo_read_param_from_flash(void)
     uint8_t* addr =  cali_addr + 2;
     uint16_t crc_16 = check_sum(addr,len);
     if(crc_16 != ag->crc_16){
-        CWM_OS_dbgPrintf("[algo] read cali fail %d,%d\n",crc_16,ag->crc_16);            
+        cwm_app_debug("[algo] read cali fail %d,%d\n",crc_16,ag->crc_16);            
 
         algo_dev_info.ag_cali_value.valid = 0;
         algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_FAIL;
@@ -224,7 +224,7 @@ static void algo_read_param_from_flash(void)
     }
     else{            
         memcpy(&algo_dev_info.ag_cali_value.crc_16,cali_addr,2+26);
-        CWM_OS_dbgPrintf("[algo] read cali success\n");
+        cwm_app_debug("[algo] read cali success\n");
     }
 
 
@@ -233,13 +233,13 @@ static void algo_read_param_from_flash(void)
     len = 14;/*计算校验时，注意 4 字节对齐问题*/ 
     crc_16 = check_sum(addr,len);
     if(crc_16 != ag->auto_crc_16){
-        CWM_OS_dbgPrintf("[algo] read auto cali fail %d,%d\n",crc_16,ag->auto_crc_16);            
+        cwm_app_debug("[algo] read auto cali fail %d,%d\n",crc_16,ag->auto_crc_16);            
 
         algo_dev_info.ag_cali_value.auto_valid = 0;        
     }
     else{            
         memcpy(&algo_dev_info.ag_cali_value.auto_crc_16,&cali_addr[2 + 26],2+14);
-        CWM_OS_dbgPrintf("[algo] read auto cali success\n");
+        cwm_app_debug("[algo] read auto cali success\n");
     }    
 
 
@@ -254,7 +254,7 @@ static void algo_read_param_from_flash(void)
     addr =  ori_eul_addr + 2;
     crc_16 = check_sum(addr,len);
     if(crc_16 != ori_eul_value.crc_16){
-        CWM_OS_dbgPrintf("[algo] read orig eul fail %d,%d\n",crc_16,ori_eul_value.crc_16);
+        cwm_app_debug("[algo] read orig eul fail %d,%d\n",crc_16,ori_eul_value.crc_16);
 
         algo_dev_info.original_eul.valid = 0;
         algo_dev_info.original_eul.step1_status = E_ORI_EUL_CALI_FAIL;
@@ -263,7 +263,7 @@ static void algo_read_param_from_flash(void)
     }
     else{
         memcpy(&algo_dev_info.original_eul,ori_eul_addr,sizeof(struct original_eul_t));
-        CWM_OS_dbgPrintf("[algo] read orig eul success\n");
+        cwm_app_debug("[algo] read orig eul success\n");
     }
 }
 
@@ -271,7 +271,7 @@ static void algo_read_param_from_flash(void)
 
 static void algo_quiet_enable(bool reset)
 {
-    CWM_OS_dbgPrintf("[algo]algo_quiet_enable reset=%d,sensor_off=%d\n",(uint8_t)reset,standby_sensor_off);
+    cwm_app_debug("[algo]algo_quiet_enable reset=%d,sensor_off=%d\n",(uint8_t)reset,standby_sensor_off);
 
     if(standby_sensor_off)
         return;
@@ -284,7 +284,7 @@ static void algo_quiet_enable(bool reset)
 }
 static void algo_quiet_disable(void)
 {
-    CWM_OS_dbgPrintf("[algo]algo_quiet_disable\n");
+    cwm_app_debug("[algo]algo_quiet_disable\n");
     fg_quiet = 0;
 }
 static void algo_quiet_check_time(void)
@@ -298,33 +298,33 @@ static void algo_quiet_check_time(void)
 static bool algo_quiet_process(uint8_t type, float *f)
 {
     if((fg_quiet) && (NULL != algo_current)){
-        // CWM_OS_dbgPrintf("[algo]algo_quiet_process id=%u,ty=%u\n",algo_current->id,type);
+        // cwm_app_debug("[algo]algo_quiet_process id=%u,ty=%u\n",algo_current->id,type);
         if((E_STATE_STANDBY == algo_current->id) && (type & SENSOR_ACC)){
             float ax = f[0];
             float ay = f[1];
             float az = f[2];
 
             quiet_a[quiet_a_num] = (float)sqrt(ax*ax + ay*ay + az*az);
-            //CWM_OS_dbgPrintf("[algo]algo_quiet_process quiet_a*1000[%d] = %d\n",quiet_a_num,(int32_t)(quiet_a[quiet_a_num]*1000));
+            //cwm_app_debug("[algo]algo_quiet_process quiet_a*1000[%d] = %d\n",quiet_a_num,(int32_t)(quiet_a[quiet_a_num]*1000));
             quiet_a_num++;
 
             if(quiet_a_num == A_BUF_MAX){
                 quiet_a_num = 0;
                 for (int i = 1; i < A_BUF_MAX; i++) {
                     if(FABS(quiet_a[i] - quiet_a[i - 1]) > algo_quiet_lev) {
-                        CWM_OS_dbgPrintf("[algo]algo_quiet_process num:%d,value*1000:%d,%d,%d,%d\n",
+                        cwm_app_debug("[algo]algo_quiet_process num:%d,value*1000:%d,%d,%d,%d\n",
                             i,
                             (int32_t)(quiet_a[i]*1000),
                             (int32_t)(quiet_a[i - 1]*1000),
                             (int32_t)(FABS(quiet_a[i] - quiet_a[i - 1])*1000),
                             (int32_t)(algo_quiet_lev*1000));
                         
-                        CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========faild===========\n");
+                        cwm_app_debug("[algo]algo_quiet_process ===========faild===========\n");
                         memset(quiet_a,0,sizeof(quiet_a));
                         return false;
                     }
                 }
-                CWM_OS_dbgPrintf("[algo]algo_quiet_process ===========success===========\n");
+                cwm_app_debug("[algo]algo_quiet_process ===========success===========\n");
                 return true;
             }
         }
@@ -339,13 +339,13 @@ static void algo_ag_buf_set(uint8_t data_type)
     struct algo_ag_t* buf = &algo_dev_info.algo_ag;
     memset(buf,0,sizeof(struct algo_ag_t));
     buf->data_type = data_type;
-    CWM_OS_dbgPrintf("[algo]algo_ag_buf_set: %d\n",data_type);
+    cwm_app_debug("[algo]algo_ag_buf_set: %d\n",data_type);
 }
 /*将 sensor 数据写入缓存区，注意：必须先 acc 后 gyro，否则 size 容易出现异常*/
 static void algo_ag_write(uint32_t id, float* f)
 {
     struct algo_ag_t* buf = &algo_dev_info.algo_ag;
-    // CWM_OS_dbgPrintf("[algo]algo_ag_write: %d,%d\n",buf->data_type,id);
+    // cwm_app_debug("[algo]algo_ag_write: %d,%d\n",buf->data_type,id);
     if((buf->data_type & SENSOR_GYR) && (SENSOR_GYR == id)){
         memcpy(&buf->data[buf->write++].gx,f,4*3);
         buf->size++;
@@ -480,7 +480,7 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
                     algo_dev_info.ag_cali_value.gz = (int32_t)(f[9] * 1000000);
                     algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_SUCCESS;
                     algo_quiet_disable();
-                    CWM_OS_dbgPrintf("[algo]IDX_ALGO_SPV whole E_CALI_SUCCESS:gx=%d,gy=%d,gz=%d\n",
+                    cwm_app_debug("[algo]IDX_ALGO_SPV whole E_CALI_SUCCESS:gx=%d,gy=%d,gz=%d\n",
                         algo_dev_info.ag_cali_value.gx,
                         algo_dev_info.ag_cali_value.gy,
                         algo_dev_info.ag_cali_value.gz);
@@ -493,7 +493,7 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
                     algo_dev_info.ag_cali_value.gy = (int32_t)(f[8] * 1000000);
                     algo_dev_info.ag_cali_value.gz = (int32_t)(f[9] * 1000000);
                     algo_dev_info.ag_cali_value.spv_pcba_status = E_CALI_SUCCESS;
-                    CWM_OS_dbgPrintf("[algo]IDX_ALGO_SPV pcba E_CALI_SUCCESS:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
+                    cwm_app_debug("[algo]IDX_ALGO_SPV pcba E_CALI_SUCCESS:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
                         algo_dev_info.ag_cali_value.ax,
                         algo_dev_info.ag_cali_value.ay,
                         algo_dev_info.ag_cali_value.az,
@@ -506,7 +506,7 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
                     algo_dev_info.ag_cali_value.ay = (int32_t)(f[5] * 1000000);
                     algo_dev_info.ag_cali_value.az = (int32_t)(f[6] * 1000000);
                     algo_dev_info.ag_cali_value.sixface_status = E_CALI_SUCCESS;
-                    CWM_OS_dbgPrintf("[algo]IDX_ALGO_SPV sixface E_CALI_SUCCESS:ax=%d,ay=%d,az=%d\n",
+                    cwm_app_debug("[algo]IDX_ALGO_SPV sixface E_CALI_SUCCESS:ax=%d,ay=%d,az=%d\n",
                         algo_dev_info.ag_cali_value.ax,
                         algo_dev_info.ag_cali_value.ay,
                         algo_dev_info.ag_cali_value.az);
@@ -518,15 +518,15 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
             else if((1 == f[0]) && (0 == f[1])){
                 if(E_CALI_RUNNING == algo_dev_info.ag_cali_value.spv_whole_status){
                     algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_FAIL;
-                    CWM_OS_dbgPrintf("[algo]IDX_ALGO_SPV whole E_CALI_FAIL\n");
+                    cwm_app_debug("[algo]IDX_ALGO_SPV whole E_CALI_FAIL\n");
                 }
                 else if(E_CALI_RUNNING == algo_dev_info.ag_cali_value.spv_pcba_status){
                     algo_dev_info.ag_cali_value.spv_pcba_status = E_CALI_FAIL;
-                    CWM_OS_dbgPrintf("[algo]IDX_ALGO_SPV pcba E_CALI_FAIL\n");
+                    cwm_app_debug("[algo]IDX_ALGO_SPV pcba E_CALI_FAIL\n");
                 }
                 else if(E_CALI_RUNNING == algo_dev_info.ag_cali_value.sixface_status){
                     algo_dev_info.ag_cali_value.sixface_status = E_CALI_FAIL;
-                    CWM_OS_dbgPrintf("[algo]IDX_ALGO_SPV sixface E_CALI_FAIL\n");
+                    cwm_app_debug("[algo]IDX_ALGO_SPV sixface E_CALI_FAIL\n");
                 }
 
                 algo_dev_info.event_cali_finish = 1;
@@ -535,13 +535,13 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
         break;
         case 100:
             algo_res_write(f);
-            // CWM_OS_dbgPrintf("[algo][100]*1000: %d,%d,%d\n",
+            // cwm_app_debug("[algo][100]*1000: %d,%d,%d\n",
             //     (int32_t)(f[0]*1000),
             //     (int32_t)(f[1]*1000),
             //     (int32_t)(f[2]*1000));
         break;
         case 112:
-            CWM_OS_dbgPrintf("[algo][112]*1000 :%d,%d\n",
+            cwm_app_debug("[algo][112]*1000 :%d,%d\n",
                 (int32_t)(f[2]*1000),
                 (int32_t)(f[6]*1000));
             /*
@@ -589,7 +589,7 @@ static void OS_algo_listen(pSensorEVT_t sensorEVT) {
             }
         break;
         case 21:
-            CWM_OS_dbgPrintf("[algo][21]*1000: gyro auro cali: %d\n",
+            cwm_app_debug("[algo][21]*1000: gyro auro cali: %d\n",
                 (int32_t)(f[2]*1000));
         break;
         default:
@@ -688,7 +688,7 @@ static void hs_algo_init(void)
             scl.iData[7] = algo_dev_info.ag_cali_value.gz;
         }
         CWM_SettingControl(SCL_SENS_CALI_CTRL_A, &scl);
-        CWM_OS_dbgPrintf("[algo]set cali ag value:auto=%d,ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
+        cwm_app_debug("[algo]set cali ag value:auto=%d,ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
             algo_dev_info.ag_cali_value.auto_valid,scl.iData[2],scl.iData[3], scl.iData[4],scl.iData[5],scl.iData[6], scl.iData[7]);
     }
     if(algo_dev_info.original_eul.valid){
@@ -699,17 +699,17 @@ static void hs_algo_init(void)
         scl.iData[3] = (int32_t)algo_dev_info.original_eul.pitch;
         scl.iData[4] = (int32_t)algo_dev_info.original_eul.roll;
         CWM_SettingControl(SCL_HS_INTF_CONFIG, &scl);
-        CWM_OS_dbgPrintf("[algo]set ori eul:yaw=%d,pitch=%d,roll=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
+        cwm_app_debug("[algo]set ori eul:yaw=%d,pitch=%d,roll=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
     }else{
         memcpy(&scl,dml_hs_intf_config,sizeof(scl));
         CWM_SettingControl(SCL_HS_INTF_CONFIG, &scl);
-        CWM_OS_dbgPrintf("[algo]set ori eul default:yaw=%d,pitch=%d,roll=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
+        cwm_app_debug("[algo]set ori eul default:yaw=%d,pitch=%d,roll=%d\n",scl.iData[2],scl.iData[3], scl.iData[4]);
     }
 }
 
 static void algo_log_debug_ctl(uint32_t ctr)
 {
-    CWM_OS_dbgPrintf("[algo] algo_log_debug_ctl ctr = %d\n",ctr);
+    cwm_app_debug("[algo] algo_log_debug_ctl ctr = %d\n",ctr);
     SettingControl_t scl;
     if (ctr)
     {
@@ -736,7 +736,7 @@ static void algo_log_debug_ctl(uint32_t ctr)
 
 static void algo_spv_cali_en(uint32_t mode)
 {
-    CWM_OS_dbgPrintf("[algo] algo_spv_cali_en mode:%d\n",mode);
+    cwm_app_debug("[algo] algo_spv_cali_en mode:%d\n",mode);
     switch(mode){
         case E_CALI_SPV_WHOLE:
             algo_dev_info.ag_cali_value.spv_whole_status = E_CALI_RUNNING;
@@ -776,7 +776,7 @@ static void algo_spv_cali_en(uint32_t mode)
 static void algo_original_eul_cali_en(uint32_t steps)
 {
 
-    CWM_OS_dbgPrintf("[algo] algo_original_eul_cali_en steps = %d\n",steps);
+    cwm_app_debug("[algo] algo_original_eul_cali_en steps = %d\n",steps);
     SettingControl_t scl;
     switch(steps){    
         case E_ANGLE_INIT_STEP1:
@@ -822,7 +822,7 @@ static void algo_original_eul_cali_en(uint32_t steps)
 
 static void algo_avg_ag_value_en(void)
 {
-    CWM_OS_dbgPrintf("[algo] algo_avg_ag_value_en\n");
+    cwm_app_debug("[algo] algo_avg_ag_value_en\n");
 
     algo_dev_info.en_ag_avg_value_1s = 1;
     memset(&algo_dev_info.ag_avg_value_1s,0,sizeof(struct ag_avg_t));
@@ -841,7 +841,7 @@ static void algo_save_before_poweroff(void)
     algo_dev_info.ag_cali_value.auto_gy = scl.iData[6];
     algo_dev_info.ag_cali_value.auto_gz = scl.iData[7];
 
-    CWM_OS_dbgPrintf("[algo]auto_calib_value befor poweroff:au_gx = %d,au_gy = %d,au_gz = %d\n",algo_dev_info.ag_cali_value.auto_gx,
+    cwm_app_debug("[algo]auto_calib_value befor poweroff:au_gx = %d,au_gy = %d,au_gz = %d\n",algo_dev_info.ag_cali_value.auto_gx,
                       algo_dev_info.ag_cali_value.auto_gy,algo_dev_info.ag_cali_value.auto_gz);
     
     save_cali_value();
@@ -879,19 +879,19 @@ static void dml_algo_init(void)
     scl.iData[6] = 0;
     CWM_SettingControl(SCL_GET_CHIP_INFO, &scl);
     
-    CWM_OS_dbgPrintf("[algo] have_security = %d.%d ret_buff_size = %d  chipInfo = %s\n", scl.iData[5], scl.iData[6], scl.iData[4], chipInfo);
-    CWM_OS_dbgPrintf("[algo] chip_settings = %d, %d, %d\n", scl.iData[9], scl.iData[10], scl.iData[11]);
+    cwm_app_debug("[algo] have_security = %d.%d ret_buff_size = %d  chipInfo = %s\n", scl.iData[5], scl.iData[6], scl.iData[4], chipInfo);
+    cwm_app_debug("[algo] chip_settings = %d, %d, %d\n", scl.iData[9], scl.iData[10], scl.iData[11]);
     customio_get_security_state(scl.iData[5]);
 
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
     CWM_SettingControl(SCL_GET_LIB_INFO, &scl);
-    CWM_OS_dbgPrintf("[algo] algo version:%d.%d.%d.%d product:%d model:%d\n", scl.iData[1], scl.iData[2], scl.iData[3], scl.iData[4], scl.iData[5], scl.iData[6]);
+    cwm_app_debug("[algo] algo version:%d.%d.%d.%d product:%d model:%d\n", scl.iData[1], scl.iData[2], scl.iData[3], scl.iData[4], scl.iData[5], scl.iData[6]);
 
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
     CWM_SettingControl(SCL_DML_GET_LIB_INFO, &scl);
-    CWM_OS_dbgPrintf("[algo] dml version:%d.%d.%d.%d product:%d model:%d\n", scl.iData[1], scl.iData[2], scl.iData[3], scl.iData[4], scl.iData[5], scl.iData[6]);
+    cwm_app_debug("[algo] dml version:%d.%d.%d.%d product:%d model:%d\n", scl.iData[1], scl.iData[2], scl.iData[3], scl.iData[4], scl.iData[5], scl.iData[6]);
    
     /* -----------algo_setting----------------- */
     memset(&scl, 0, sizeof(scl));
@@ -932,9 +932,9 @@ static void dml_algo_init(void)
     memset(&scl,0,sizeof(scl));
     scl.iData[0] = 1;
     CWM_SettingControl(SCL_DML_GET_INITED_LIST, &scl);
-    CWM_OS_dbgPrintf("[algo] DML find device = %d\n", scl.iData[2]);  //找到硬體的數量    (-1: 未初始化, 0: 失敗, 1 - 8)
+    cwm_app_debug("[algo] DML find device = %d\n", scl.iData[2]);  //找到硬體的數量    (-1: 未初始化, 0: 失敗, 1 - 8)
     for (i = 0; i < scl.iData[2]; i ++) {
-        CWM_OS_dbgPrintf("[algo] DML device = [%d]: hw_id=%d hw_attr=%d\n", i, scl.iData[6 + i * 2], scl.iData[7 + i * 2]);
+        cwm_app_debug("[algo] DML device = [%d]: hw_id=%d hw_attr=%d\n", i, scl.iData[6 + i * 2], scl.iData[7 + i * 2]);
     }
 
     memcpy(&scl,dml_ag_config,sizeof(scl));
@@ -973,7 +973,7 @@ static void spv_dis(void)
 
 static void algo_standby_open(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_standby_open\n");
+    cwm_app_debug("[algo]algo_standby_open\n");
     if(standby_sensor_off){
         struct sensor_setting_t setting = {0,0,0,0};
         set_sensor(0,0,&setting);
@@ -984,13 +984,13 @@ static void algo_standby_open(void* param)
 }
 static void algo_standby_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_standby_close\n");
+    cwm_app_debug("[algo]algo_standby_close\n");
     struct sensor_setting_t setting = {0,0,0,0};
     set_sensor(0,0,&setting);
 }
 static void algo_standby_spv_open(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_standby_spv_open\n");
+    cwm_app_debug("[algo]algo_standby_spv_open\n");
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1003,13 +1003,13 @@ static void algo_standby_spv_open(void* param)
 }
 static void algo_standby_spv_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_standby_spv_close\n");
+    cwm_app_debug("[algo]algo_standby_spv_close\n");
     spv_dis();
     algo_quiet_enable(false);
 }
 static void algo_hs_orit_open(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_hs_orit_open\n");
+    cwm_app_debug("[algo]algo_hs_orit_open\n");
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1028,7 +1028,7 @@ static void algo_hs_orit_open(void* param)
 }
 static void algo_hs_orit_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_hs_orit_close\n");
+    cwm_app_debug("[algo]algo_hs_orit_close\n");
     CWM_Sensor_Disable(100);
     struct sensor_setting_t setting = {0,0,0,0};
     set_sensor(0,0,&setting);
@@ -1036,7 +1036,7 @@ static void algo_hs_orit_close(void* param)
 static void algo_spv_whl_cali_open(void* param)
 {
     if(NULL == param)   return;
-    CWM_OS_dbgPrintf("[algo]algo_spv_whl_cali_open=%d\n", *((uint32_t*)param));
+    cwm_app_debug("[algo]algo_spv_whl_cali_open=%d\n", *((uint32_t*)param));
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1049,13 +1049,13 @@ static void algo_spv_whl_cali_open(void* param)
 }
 static void algo_spv_whl_cali_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_spv_whl_cali_close\n");
+    cwm_app_debug("[algo]algo_spv_whl_cali_close\n");
     spv_dis();
 }
 static void algo_spv_pcb_cali_open(void* param)
 {
     if(NULL == param)   return;
-    CWM_OS_dbgPrintf("[algo]algo_spv_pcb_cali_open=%d\n", *((uint32_t*)param));
+    cwm_app_debug("[algo]algo_spv_pcb_cali_open=%d\n", *((uint32_t*)param));
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1068,13 +1068,13 @@ static void algo_spv_pcb_cali_open(void* param)
 }
 static void algo_spv_pcb_cali_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_spv_pcb_cali_close\n");
+    cwm_app_debug("[algo]algo_spv_pcb_cali_close\n");
     spv_dis();
 }
 static void algo_spv_sfa_cali_open(void* param)
 {
     if(NULL == param)   return;
-    CWM_OS_dbgPrintf("[algo]algo_spv_sfa_cali_open=%d\n", *((uint32_t*)param));
+    cwm_app_debug("[algo]algo_spv_sfa_cali_open=%d\n", *((uint32_t*)param));
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1087,13 +1087,13 @@ static void algo_spv_sfa_cali_open(void* param)
 }
 static void algo_spv_sfa_cali_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_spv_sfa_cali_close\n");
+    cwm_app_debug("[algo]algo_spv_sfa_cali_close\n");
     spv_dis();
 }
 static void algo_orig_eul_cali_open(void* param)
 {
     if(NULL == param)   return;
-    CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_open %d\n", *((uint32_t*)param));
+    cwm_app_debug("[algo]algo_orig_eul_cali_open %d\n", *((uint32_t*)param));
     struct sensor_setting_t setting;
     setting.odr = defautl_odr;
     setting.power_mode = SENSOR_DEFAULT;
@@ -1113,7 +1113,7 @@ static void algo_orig_eul_cali_open(void* param)
 }
 static void algo_orig_eul_cali_close(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_orig_eul_cali_close\n");
+    cwm_app_debug("[algo]algo_orig_eul_cali_close\n");
     CWM_Sensor_Disable(100);
     CWM_Sensor_Disable(112);
     struct sensor_setting_t setting = {0,0,0,0};
@@ -1124,17 +1124,17 @@ static void algo_func_log_ctl(void* param)
     if(NULL ==  param)  return;
     uint32_t* ctr = (uint32_t*)param;
 
-    CWM_OS_dbgPrintf("[algo]algo_func_log_ctl\n");
+    cwm_app_debug("[algo]algo_func_log_ctl\n");
     algo_log_debug_ctl(*ctr);
 }
 static void algo_func_ag_avg_value(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_func_ag_avg_value\n");
+    cwm_app_debug("[algo]algo_func_ag_avg_value\n");
     algo_avg_ag_value_en();
 }
 static void algo_func_save_before_poweroff(void* param)
 {
-    CWM_OS_dbgPrintf("[algo]algo_func_save_before_poweroff\n");
+    cwm_app_debug("[algo]algo_func_save_before_poweroff\n");
     algo_save_before_poweroff();
 }
 ////////////////////////////////////////////////////////////////算法状态管理////////////////////////////////////////////////////////
@@ -1167,7 +1167,7 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
     const struct func_t* func;
     for(uint16_t i = 0; i < sizeof(algo_func_table)/sizeof(algo_func_table[0]); i++){
         func = &algo_func_table[i];
-        if(NULL == func) {CWM_OS_dbgPrintf("[algo]algo_state_handle func NULL\n");break;}
+        if(NULL == func) {cwm_app_debug("[algo]algo_state_handle func NULL\n");break;}
 
         if((id == func->id) && (NULL != func->handle)){
             func->handle(param);
@@ -1178,12 +1178,12 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
     const struct algo_t* algo;
     for(uint16_t i = 0; i < sizeof(algo_state_table)/sizeof(algo_state_table[0]); i++){
         algo = &algo_state_table[i];
-        if(NULL == algo) {CWM_OS_dbgPrintf("[algo]algo_state_handle algo NULL\n");break;}
+        if(NULL == algo) {cwm_app_debug("[algo]algo_state_handle algo NULL\n");break;}
 
         if(id == algo->id){
             if((E_ALGO_EVENT_OPEN == event) && (algo->level < E_ALGO_STATE_MAX)){
                 if(NULL != algo_current){
-                    {CWM_OS_dbgPrintf("[algo]algo_state_handle lv %u >? %u \n",algo->level,algo_current->level);}
+                    {cwm_app_debug("[algo]algo_state_handle lv %u >? %u \n",algo->level,algo_current->level);}
                     /*
                     先关闭低优先级或同级状态,
                     再执行高优先级状态,
@@ -1195,7 +1195,7 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
                         OPEN(algo,param);
                     }
                 }else{
-                    {CWM_OS_dbgPrintf("[algo]algo_state_handle algo_current NULL\n");}
+                    {cwm_app_debug("[algo]algo_state_handle algo_current NULL\n");}
                     OPEN(algo,param);
                 }
 
@@ -1214,7 +1214,7 @@ void algo_state_handle(uint16_t id, uint16_t event, void* param){
                         return;
                     }
                     else
-                        {CWM_OS_dbgPrintf("[algo]algo_state_handle algo_current_lev[%u] \n",level - 1);}
+                        {cwm_app_debug("[algo]algo_state_handle algo_current_lev[%u] \n",level - 1);}
                     level--;
                 }
             }
@@ -1231,7 +1231,7 @@ struct ag_cali_back_t* get_algo_dev_info_ag_cali_value(void)
 
 void algo_init(void)
 {
-    CWM_OS_dbgPrintf("[algo] config version %s\n",ALGO_CONFIG_VERSION);
+    cwm_app_debug("[algo] config version %s\n",ALGO_CONFIG_VERSION);
 
     //从 FLASH 中读取 acc,gyro 校正参数和初始角度
     memset((uint8_t*)&algo_dev_info,0,sizeof(algo_dev_info));
@@ -1292,7 +1292,7 @@ void algo_data_handle(void)
         else if(2 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step2_status;
         else if(3 == algo_dev_info.original_eul.running_steps) status = algo_dev_info.original_eul.step3_status;
         customio_notify_ori_eul_cali_result(algo_dev_info.original_eul.running_steps,status);
-        CWM_OS_dbgPrintf("[algo]orig eul cali:runing_step =%d, step1_status=%d, step2_status=%d, step3_status=%d,\n",
+        cwm_app_debug("[algo]orig eul cali:runing_step =%d, step1_status=%d, step2_status=%d, step3_status=%d,\n",
             algo_dev_info.original_eul.running_steps,
             algo_dev_info.original_eul.step1_status,
             algo_dev_info.original_eul.step2_status,
@@ -1312,12 +1312,12 @@ void algo_data_handle(void)
             struct original_eul_t ori_eul_value = {0};
             customio_read_flash_eul((uint8_t*)&ori_eul_value,sizeof(ori_eul_value));
             if(!memcmp(&algo_dev_info.original_eul,&ori_eul_value,sizeof(struct original_eul_t))){
-                CWM_OS_dbgPrintf("[algo]flash write original_eul succuss\n");
+                cwm_app_debug("[algo]flash write original_eul succuss\n");
             }else{
-                CWM_OS_dbgPrintf("[algo]flash write original_eul fail\n");
+                cwm_app_debug("[algo]flash write original_eul fail\n");
             }
 
-            CWM_OS_dbgPrintf("[algo]save :yaw=%d,pitch=%d,roll=%d",(int32_t)ori_eul_value.yaw,(int32_t)ori_eul_value.pitch,(int32_t)ori_eul_value.roll);
+            cwm_app_debug("[algo]save :yaw=%d,pitch=%d,roll=%d",(int32_t)ori_eul_value.yaw,(int32_t)ori_eul_value.pitch,(int32_t)ori_eul_value.roll);
 
         }
     }
@@ -1330,7 +1330,7 @@ void algo_data_handle(void)
 
         /*此处添加客户接口：将 ag 平均值传给客户*/
         customio_read_ag_avg_value((float *)&algo_dev_info.ag_avg_value_1s.ag);
-        CWM_OS_dbgPrintf("[algo]ag avg:%d,%d,value*1000:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
+        cwm_app_debug("[algo]ag avg:%d,%d,value*1000:ax=%d,ay=%d,az=%d,gx=%d,gy=%d,gz=%d\n",
             algo_dev_info.ag_avg_value_1s.a_cnts,
             algo_dev_info.ag_avg_value_1s.g_cnts,
             (int32_t)(algo_dev_info.ag_avg_value_1s.ag.ax*1000),

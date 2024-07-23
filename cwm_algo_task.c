@@ -52,7 +52,7 @@ static uint32_t period_ms;/*算法运行周期*/
 
 void algo_message_handle(uint32_t id,uint8_t* data)
 {
-    CWM_OS_dbgPrintf("[algo]algo_message_handle %u %u\n",id,*((uint32_t*)data));
+    cwm_app_debug("[algo]algo_message_handle %u %u\n",id,*((uint32_t*)data));
     switch (id){
         case E_ALGO_MSG_LOG_DEBUG_CTL:{
             uint32_t* ctr = (uint32_t*)data;
@@ -158,7 +158,7 @@ void cwm_algo_task(void *pvParameters){
         #endif
 
         period_ms = 1000/algo_get_odr();
-        // CWM_OS_dbgPrintf("[cwm_algo_task]: \n");
+        // cwm_app_debug("[cwm_algo_task]: \n");
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(period_ms));
     }
 }

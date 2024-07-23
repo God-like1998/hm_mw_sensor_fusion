@@ -59,7 +59,7 @@ void test_print_calibration_value(void)
 
             static int32_t auto_cali_value_change_cnts = 0;
             auto_cali_value_change_cnts++;
-            CWM_OS_dbgPrintf("[algo]test auto_cali changes: %d, value: %d,%d,%d, auto_cli-fac_cali: %d,%d,%d\n",
+            cwm_app_debug("[algo]test auto_cali changes: %d, value: %d,%d,%d, auto_cli-fac_cali: %d,%d,%d\n",
             auto_cali_value_change_cnts,
             ag_cali_value.auto_gx,
             ag_cali_value.auto_gy,

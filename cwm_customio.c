@@ -315,7 +315,7 @@ os_api customio_os_api = {
     .i2cWrite = OS_algo_i2c_write,
 };
 /****************************************************打印接口************************************************/
-int CWM_OS_dbgPrintf(const char * format,...)
+int cwm_app_debug(const char * format,...)
 {
     char str[120] = {0};
     va_list    args;
@@ -332,7 +332,7 @@ int CWM_OS_dbgPrintf(const char * format,...)
 /****************************************************配置 sensor 相关参数************************************************/
 #define CWM_DEFAUL_ODR     50
 const uint16_t defautl_odr = CWM_DEFAUL_ODR;
-const int dml_vendor_config[16] = {1,2};
+const int dml_vendor_config[16] = {1,21030200};
 const int dml_hw_config[16] = {1,2,0,0,0,0,3002301,1+8};
 const int dml_ag_config[16] = {1,1,1,2,1,0,25,22,CWM_DEFAUL_ODR,16,1000,0,0};
 const int dml_mag_config[16] = {1,1,1,1,1,0,0,4,CWM_DEFAUL_ODR};
@@ -353,12 +353,12 @@ uint8_t SEC_FILE_ADDR[4096];
 void customio_listen_pre(void)
 {
     cm__ah2__mac_init();
-    CWM_OS_dbgPrintf("[algo] cm__ah2__mac_init\n");
+    cwm_app_debug("[algo] cm__ah2__mac_init\n");
 }
 void customio_listen_after(void)
 {   
     cm__ah2__mac_deinit();
-    CWM_OS_dbgPrintf("[algo] cm__ah2__mac_deinit\n");
+    cwm_app_debug("[algo] cm__ah2__mac_deinit\n");
 }
 void customio_get_security_addr(uint32_t* addr,uint32_t* len)
 {
@@ -369,19 +369,19 @@ void customio_get_security_addr(uint32_t* addr,uint32_t* len)
     fota_flash_write(0x08A59000, (const uint8_t *)test_write, 5, 1);
     fota_flash_read(0x08A59000, test_read, 5, 1);
     for(int i = 0; i < 5; i++){
-        CWM_OS_dbgPrintf("[customio] test value = 0x%x\n",test_read[i]);
+        cwm_app_debug("[customio] test value = 0x%x\n",test_read[i]);
     }
 
 
     //将 SEC_FILE_ADDR 的地址送给算法
     *addr = SEC_FILE_ADDR;
     *len  = 4096;
-    CWM_OS_dbgPrintf("[customio] addr = 0x%x len = %d",*addr,*len);
+    cwm_app_debug("[customio] addr = 0x%x len = %d",*addr,*len);
 
 }
 void customio_get_security_state(int state)
 {
-    CWM_OS_dbgPrintf("[customio]security_state = %d\n",state);
+    cwm_app_debug("[customio]security_state = %d\n",state);
 
 }
 /****************************************************flash 读写需要实现的接口************************************************/
@@ -389,28 +389,28 @@ void customio_read_flash_cali(uint8_t* data,uint32_t len)
 {
     uint8_t* addr = data;
     nvkey_status_t state = nvkey_read_data(NVID_CWM_SPV_CALIB_PARAMETERS,addr,&len);
-    CWM_OS_dbgPrintf("[algo] read spv calib value from flash state %d ",state);
+    cwm_app_debug("[algo] read spv calib value from flash state %d ",state);
 }
 
 void customio_save_flash_cali(uint8_t* data,uint32_t len)
 {
     const uint8_t* addr = (const uint8_t*)data;
     nvkey_status_t status = nvkey_write_data(NVID_CWM_SPV_CALIB_PARAMETERS,addr,len);
-    CWM_OS_dbgPrintf("[algo] save spv calib value to flash  state: %d",status);
+    cwm_app_debug("[algo] save spv calib value to flash  state: %d",status);
 }
 
 void customio_read_flash_eul(uint8_t* data,uint32_t len)
 {
    uint8_t* addr = data;
    nvkey_status_t state = nvkey_read_data(NVID_CWM_ANGLE_INIT_PARAMETERS,addr,&len);
-   CWM_OS_dbgPrintf("[algo] read angle init value from flash state %d ",state);
+   cwm_app_debug("[algo] read angle init value from flash state %d ",state);
 }
 
 void customio_save_flash_eul(uint8_t* data,uint32_t len)
 {
     const uint8_t* addr = (const uint8_t*)data;
     nvkey_status_t status = nvkey_write_data(NVID_CWM_ANGLE_INIT_PARAMETERS,addr,len);
-    CWM_OS_dbgPrintf("[algo] save angle init value to flash  state: %d",status);
+    cwm_app_debug("[algo] save angle init value to flash  state: %d",status);
 }
 
 
@@ -444,7 +444,7 @@ uint8_t nums：
 */
 void customio_read_ag(uint8_t type, float *f, uint8_t idx, uint8_t nums)
 {
-    // CWM_OS_dbgPrintf("[customio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
+    // cwm_app_debug("[customio]read acc-gyro: %f,%f,%f   ,%f,%f,%f\n",
     //         f[0],f[1],f[2],
     //         f[3],f[4],f[5]);
 }
@@ -462,7 +462,7 @@ float *f:
 */
 void customio_read_eul_qua(float *f)
 {
-    CWM_OS_dbgPrintf("[customio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
+    cwm_app_debug("[customio]read eul-qua: yaw=%f pitch=%f roll=%f x=%f y=%f z=%f w=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5],f[6]);
 }
@@ -479,7 +479,7 @@ float *f:
 */
 void customio_read_ag_avg_value(float *f)
 {
-    CWM_OS_dbgPrintf("[customio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
+    cwm_app_debug("[customio]ag avg:ax=%f,ay=%f,az=%f,gx=%f,gy=%f,gz=%f\n",
             f[0],f[1],f[2],
             f[3],f[4],f[5]);
 }
@@ -496,7 +496,7 @@ sixf：六面校正结果。
 */
 void customio_notify_spv_cali_result(uint16_t whl,uint16_t pcba,uint16_t sixf)
 {
-    CWM_OS_dbgPrintf("[customio]customio_notify_spv_cali_result:whl=%d, pcba=%d, sixf=%d [2==success / 0==fail]\n",
+    cwm_app_debug("[customio]customio_notify_spv_cali_result:whl=%d, pcba=%d, sixf=%d [2==success / 0==fail]\n",
         whl,
         pcba,
         sixf); 
@@ -517,7 +517,7 @@ status：当前校正步骤结果：
 */
 void customio_notify_ori_eul_cali_result(uint16_t steps,uint16_t status)
 {
-    CWM_OS_dbgPrintf("[customio]customio_notify_ori_eul_cali_result:running steps=%d, state=%d [2==success / 0==fail] \n",
+    cwm_app_debug("[customio]customio_notify_ori_eul_cali_result:running steps=%d, state=%d [2==success / 0==fail] \n",
         steps,
         status);
 }
