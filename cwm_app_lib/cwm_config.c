@@ -857,6 +857,9 @@ static void dml_algo_init(void)
 
     /* 设置MCU芯片信息, 必须在 CWM_LibPreInit() 之后， CWM_LibPostInit() 之前设置 */
     memcpy(&scl,dml_vendor_config,sizeof(scl));
+    uint32_t addr,len;
+    customio_get_security_addr(&addr,&len);
+    scl.iData[5] = (int)addr;
     CWM_SettingControl(SCL_CHIP_VENDOR_CONFIG, &scl);
 
     customio_listen_pre();
@@ -878,7 +881,8 @@ static void dml_algo_init(void)
     
     CWM_OS_dbgPrintf("[algo] have_security = %d.%d ret_buff_size = %d  chipInfo = %s\n", scl.iData[5], scl.iData[6], scl.iData[4], chipInfo);
     CWM_OS_dbgPrintf("[algo] chip_settings = %d, %d, %d\n", scl.iData[9], scl.iData[10], scl.iData[11]);
-    
+    customio_get_security_state(scl.iData[5]);
+
     memset(&scl, 0, sizeof(scl));
     scl.iData[0] = 1;
     CWM_SettingControl(SCL_GET_LIB_INFO, &scl);

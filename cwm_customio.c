@@ -24,6 +24,7 @@
 
 #include "nvkey.h"
 #include "nvkey_id_list.h"
+#include "fota_flash.h"
 
 #define CWM_ALGO_TEST     "cwm_algo_test"
 
@@ -348,11 +349,40 @@ const float algo_quiet_lev = 0.15f;
 const uint32_t algo_quiet_timeout_min = 60*10;
 
 /****************************************************密钥检查接口************************************************/
+uint8_t SEC_FILE_ADDR[4096];
 void customio_listen_pre(void)
 {
+    cm__ah2__mac_init();
+    CWM_OS_dbgPrintf("[algo] cm__ah2__mac_init\n");
 }
 void customio_listen_after(void)
+{   
+    cm__ah2__mac_deinit();
+    CWM_OS_dbgPrintf("[algo] cm__ah2__mac_deinit\n");
+}
+void customio_get_security_addr(uint32_t* addr,uint32_t* len)
 {
+
+    //测试读写接口，正式使用只需使用读接口即可，将数据读到 SEC_FILE_ADDR 
+    uint8_t test_write[5] = {0x12,0x34,0x56,0x78,0x9a};
+    uint8_t test_read[5] = {0};
+    fota_flash_write(0x08A59000, (const uint8_t *)test_write, 5, 1);
+    fota_flash_read(0x08A59000, test_read, 5, 1);
+    for(int i = 0; i < 5; i++){
+        CWM_OS_dbgPrintf("[customio] test value = 0x%x\n",test_read[i]);
+    }
+
+
+    //将 SEC_FILE_ADDR 的地址送给算法
+    *addr = SEC_FILE_ADDR;
+    *len  = 4096;
+    CWM_OS_dbgPrintf("[customio] addr = 0x%x len = %d",*addr,*len);
+
+}
+void customio_get_security_state(int state)
+{
+    CWM_OS_dbgPrintf("[customio]security_state = %d\n",state);
+
 }
 /****************************************************flash 读写需要实现的接口************************************************/
 void customio_read_flash_cali(uint8_t* data,uint32_t len)
