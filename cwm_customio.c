@@ -363,15 +363,11 @@ void customio_listen_after(void)
 void customio_get_security_addr(uint32_t* addr,uint32_t* len)
 {
 
-    //测试读写接口，正式使用只需使用读接口即可，将数据读到 SEC_FILE_ADDR 
-    uint8_t test_write[5] = {0x12,0x34,0x56,0x78,0x9a};
-    uint8_t test_read[5] = {0};
-    fota_flash_write(0x08A59000, (const uint8_t *)test_write, 5, 1);
-    fota_flash_read(0x08A59000, test_read, 5, 1);
-    for(int i = 0; i < 5; i++){
-        cwm_app_debug("[customio] test value = 0x%x\n",test_read[i]);
+    //将数据读到 SEC_FILE_ADDR 
+    fota_flash_read(0x08A59000, SEC_FILE_ADDR, 4096, 1);
+    for(int i = 0; i < 100; i++){
+        cwm_app_debug("[customio] test value = 0x%x\n",SEC_FILE_ADDR[i]);
     }
-
 
     //将 SEC_FILE_ADDR 的地址送给算法
     *addr = SEC_FILE_ADDR;
